@@ -67,49 +67,73 @@ class Exam extends BaseController
     
     public function start($examId)
     {
-        $userId = session()->get('user_id');
-        $exam = $this->examModel->find($examId);
+    $userId = session()->get('user_id');
+    $exam = $this->examModel->find($examId);
+    
+    if (!$exam || $exam['status'] !== 'published') {
+        return redirect()->to('/exam')->with('error', 'Ujian tidak tersedia');
+    }
+    
+    // Cek registrasi
+    $registration = $this->registrationModel
+        ->where('user_id', $userId)
+        ->where('exam_id', $examId)
+        ->first();
+    
+    if (!$registration) {
+        return redirect()->to('/exam')->with('error', 'Silakan daftar dulu');
+    }
+    
+    // Cek apakah sudah ada sesi yang ongoing
+    $session = $this->sessionModel
+        ->where('user_id', $userId)
+        ->where('exam_id', $examId)
+        ->where('status', 'ongoing')
+        ->first();
+    
+    if (!$session) {
+        // Hitung waktu mulai dan selesai
+        $startTime = date('Y-m-d H:i:s');
         
-        if (!$exam || $exam['status'] !== 'published') {
-            return redirect()->to('/exam')->with('error', 'Exam not available');
+        // PENTING: Tambahkan durasi dengan BENAR
+        $durationMinutes = (int)$exam['duration_minutes'];
+        $endTime = date('Y-m-d H:i:s', strtotime("+{$durationMinutes} minutes"));
+        
+        // Debug: cek nilai
+        log_message('debug', 'Start Time: ' . $startTime);
+        log_message('debug', 'Duration: ' . $durationMinutes . ' minutes');
+        log_message('debug', 'End Time: ' . $endTime);
+        
+        // Simpan sesi baru
+        $sessionData = [
+            'user_id' => $userId,
+            'exam_id' => $examId,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'status' => 'ongoing'
+        ];
+        
+        $sessionId = $this->sessionModel->insert($sessionData);
+        
+        // Verifikasi insert berhasil
+        if (!$sessionId) {
+            return redirect()->to('/exam')->with('error', 'Gagal membuat sesi ujian');
         }
-        
-        $registration = $this->registrationModel
-            ->where('user_id', $userId)
-            ->where('exam_id', $examId)
-            ->first();
-        
-        if (!$registration) {
-            return redirect()->to('/exam')->with('error', 'Please register first');
-        }
-        
-        $session = $this->sessionModel
-            ->where('user_id', $userId)
-            ->where('exam_id', $examId)
-            ->where('status', 'ongoing')
-            ->first();
-        
-        if (!$session) {
-            $startTime = date('Y-m-d H:i:s');
-            $endTime = date('Y-m-d H:i:s', strtotime('+' . $exam['duration_minutes'] . ' minutes'));
-            
-            $sessionId = $this->sessionModel->insert([
-                'user_id' => $userId,
-                'exam_id' => $examId,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-                'status' => 'ongoing'
-            ]);
-        } else {
-            $sessionId = $session['id'];
-        }
-        
-        $firstQuestion = $this->questionModel
-            ->where('exam_id', $examId)
-            ->orderBy('order', 'ASC')
-            ->first();
-        
-        return redirect()->to('/exam/take/' . $sessionId . '/question/' . $firstQuestion['id']);
+    } else {
+        $sessionId = $session['id'];
+    }
+    
+    // Ambil soal pertama
+    $firstQuestion = $this->questionModel
+        ->where('exam_id', $examId)
+        ->orderBy('order', 'ASC')
+        ->first();
+    
+    if (!$firstQuestion) {
+        return redirect()->to('/exam')->with('error', 'Belum ada soal dalam ujian ini');
+    }
+    
+    return redirect()->to('/exam/take/' . $sessionId . '/question/' . $firstQuestion['id']);
     }
     
     public function takeExam($sessionId, $questionId = null)

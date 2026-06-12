@@ -37,9 +37,15 @@ class Admin extends BaseController
     
     public function exams()
     {
+        // Ambil SEMUA ujian, urutkan dari yang terbaru
+        $exams = $this->examModel->orderBy('id', 'DESC')->findAll();
+        
+        // Debug
+        log_message('debug', 'Total exams found: ' . count($exams));
+        
         $data = [
             'title' => 'Manage Exams',
-            'exams' => $this->examModel->findAll()
+            'exams' => $exams
         ];
         
         return view('admin/exams/index', $data);
@@ -58,17 +64,28 @@ class Admin extends BaseController
                 $data = [
                     'title' => $this->request->getPost('title'),
                     'description' => $this->request->getPost('description'),
-                    'duration_minutes' => $this->request->getPost('duration_minutes'),
+                    'duration_minutes' => (int)$this->request->getPost('duration_minutes'),
                     'total_questions' => 0,
                     'status' => $this->request->getPost('status') ?? 'draft',
                 ];
                 
-                $this->examModel->insert($data);
-                return redirect()->to('/admin/exams')->with('success', 'Exam created successfully');
+                // Debug: cek data yang akan disimpan
+                log_message('debug', 'Creating exam with data: ' . json_encode($data));
+                
+                // Simpan ke database
+                $insertId = $this->examModel->insert($data);
+                
+                if ($insertId) {
+                    return redirect()->to('/admin/exams')->with('success', 'Ujian "' . $data['title'] . '" berhasil dibuat!');
+                } else {
+                    return redirect()->back()->with('error', 'Gagal menyimpan ujian. Error: ' . json_encode($this->examModel->errors()));
+                }
+            } else {
+                return redirect()->back()->with('error', 'Validasi gagal: ' . json_encode($this->validator->getErrors()));
             }
         }
         
-        return view('admin/exams/create', ['title' => 'Create Exam']);
+        return view('admin/exams/create', ['title' => 'Create New Exam']);
     }
     
     public function questions($examId)

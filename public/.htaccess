@@ -1,49 +1,179 @@
+# ==============================================================================
+# CodeIgniter 4 .htaccess - Enhanced Version
+# ==============================================================================
+
 # Disable directory browsing
 Options -Indexes
 
-# ----------------------------------------------------------------------
-# Rewrite engine
-# ----------------------------------------------------------------------
+# Set default charset
+AddDefaultCharset UTF-8
 
-# Turning on the rewrite engine is necessary for the following rules and features.
-# FollowSymLinks must be enabled for this to work.
+# Prevent MIME type sniffing
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ==============================================================================
+# PROTECT SENSITIVE FILES
+# ==============================================================================
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Block access to sensitive files
+<FilesMatch "\.(env|log|md|json|lock|yml|yaml|ini|conf|sh|bak|old|sql)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ==============================================================================
+# REWRITE ENGINE
+# ==============================================================================
 <IfModule mod_rewrite.c>
-	Options +FollowSymlinks
-	RewriteEngine On
-
-	# If you installed CodeIgniter in a subfolder, you will need to
-	# change the following line to match the subfolder you need.
-	# http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritebase
-	# RewriteBase /
-
-	# Redirect Trailing Slashes...
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteCond %{REQUEST_URI} (.+)/$
-	RewriteRule ^ %1 [L,R=301]
-
-	# Rewrite "www.example.com -> example.com"
-	RewriteCond %{HTTPS} !=on
-	RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-	RewriteRule ^ http://%1%{REQUEST_URI} [R=301,L]
-
-	# Checks to see if the user is attempting to access a valid file,
-	# such as an image or css document, if this isn't true it sends the
-	# request to the front controller, index.php
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ^([\s\S]*)$ index.php/$1 [L,NC,QSA]
-
-	# Ensure Authorization header is passed along
-	RewriteCond %{HTTP:Authorization} .
-	RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    Options +FollowSymlinks
+    RewriteEngine On
+    
+    # RewriteBase (uncomment if CI installed in subfolder)
+    # RewriteBase /your-subfolder/
+    
+    # ========================================================================
+    # ALLOW DIRECT ACCESS TO UPLOADS FOLDER (PENTING UNTUK GAMBAR SOAL)
+    # ========================================================================
+    # Gambar soal dan file upload lainnya bisa diakses langsung tanpa lewat CI
+    RewriteRule ^uploads/ - [L]
+    
+    # Allow direct access to static assets (CSS, JS, images)
+    RewriteRule ^assets/ - [L]
+    RewriteRule ^css/ - [L]
+    RewriteRule ^js/ - [L]
+    RewriteRule ^images/ - [L]
+    RewriteRule ^fonts/ - [L]
+    
+    # ========================================================================
+    # REDIRECT TRAILING SLASHES
+    # ========================================================================
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+    
+    # ========================================================================
+    # REMOVE WWW PREFIX (optional, uncomment if needed)
+    # ========================================================================
+    # RewriteCond %{HTTPS} !=on
+    # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    # RewriteRule ^ http://%1%{REQUEST_URI} [R=301,L]
+    
+    # ========================================================================
+    # FORCE HTTPS (uncomment for production with SSL)
+    # ========================================================================
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+    
+    # ========================================================================
+    # CODEIGNITER ROUTING
+    # ========================================================================
+    # If the requested file/directory doesn't exist, route to index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([\s\S]*)$ index.php/$1 [L,NC,QSA]
+    
+    # ========================================================================
+    # PASS AUTHORIZATION HEADER (for JWT/API authentication)
+    # ========================================================================
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 </IfModule>
 
+# Fallback if mod_rewrite is not available
 <IfModule !mod_rewrite.c>
-	# If we don't have mod_rewrite installed, all 404's
-	# can be sent to index.php, and everything works as normal.
-	ErrorDocument 404 index.php
+    ErrorDocument 404 index.php
 </IfModule>
 
-# Disable server signature start
+# ==============================================================================
+# CACHE CONTROL FOR STATIC ASSETS (Performance)
+# ==============================================================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Images
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # CSS & JavaScript
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType text/javascript "access plus 1 week"
+    
+    # Fonts
+    ExpiresByType font/ttf "access plus 1 month"
+    ExpiresByType font/woff "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 month"
+    ExpiresByType application/font-woff "access plus 1 month"
+    
+    # HTML (no cache)
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# ==============================================================================
+# COMPRESSION (Performance)
+# ==============================================================================
+<IfModule mod_deflate.c>
+    # Compress HTML, CSS, JavaScript, Text, XML and fonts
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/x-httpd-php
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE font/woff
+    AddOutputFilterByType DEFLATE font/woff2
+</IfModule>
+
+# ==============================================================================
+# UPLOAD SIZE LIMIT (untuk upload gambar soal)
+# ==============================================================================
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+# ==============================================================================
+# DISABLE SERVER SIGNATURE
+# ==============================================================================
 ServerSignature Off
-# Disable server signature end
+
+# ==============================================================================
+# CORS HEADERS (jika perlu akses dari domain lain)
+# ==============================================================================
+<IfModule mod_headers.c>
+    # Allow fonts to be loaded from any domain (untuk CDN)
+    <FilesMatch "\.(ttf|otf|eot|woff|woff2)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>

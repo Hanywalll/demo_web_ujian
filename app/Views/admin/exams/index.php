@@ -1,59 +1,267 @@
 <?= $this->extend('layouts/main') ?>
 
 <?= $this->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-journal-text"></i> Manage Exams</h2>
-    <a href="<?= base_url('admin/exams/create') ?>" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Create New Exam
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="mb-1">
+            <i class="bi bi-journal-text me-2"></i>Manage Exams
+        </h2>
+        <p class="text-muted mb-0">Kelola semua ujian yang tersedia di sistem</p>
+    </div>
+    <a href="<?= base_url('admin/exams/create') ?>" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Create New Exam
     </a>
 </div>
 
 <?php if (empty($exams)): ?>
-<div class="alert alert-info text-center">
-    <i class="bi bi-info-circle"></i> No exams created yet. 
-    <a href="<?= base_url('admin/exams/create') ?>" class="alert-link">Create one now</a>
+<!-- Empty State -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-journal-x" style="font-size: 5rem; color: var(--primary-light);"></i>
+        </div>
+        <h4 class="mb-3">Belum Ada Ujian</h4>
+        <p class="text-muted mb-4">Mulai dengan membuat ujian pertama Anda</p>
+        <a href="<?= base_url('admin/exams/create') ?>" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle me-2"></i>Create First Exam
+        </a>
+    </div>
 </div>
 <?php else: ?>
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Duration</th>
-                <th>Questions</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($exams as $exam): ?>
-            <tr>
-                <td><?= $exam['id'] ?></td>
-                <td><?= esc($exam['title']) ?></td>
-                <td><?= $exam['duration_minutes'] ?> mins</td>
-                <td><?= $exam['total_questions'] ?></td>
-                <td>
-                    <span class="badge <?= $exam['status'] === 'published' ? 'bg-success' : 'bg-warning' ?>">
-                        <?= ucfirst($exam['status']) ?>
-                    </span>
-                </td>
-                <td><?= date('d M Y', strtotime($exam['created_at'])) ?></td>
-                <td>
-                    <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions') ?>" 
-                       class="btn btn-sm btn-info" title="Manage Questions">
-                        <i class="bi bi-list-ul"></i> Questions
-                    </a>
-                    <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions/add') ?>" 
-                       class="btn btn-sm btn-success" title="Add Question">
-                        <i class="bi bi-plus"></i>
-                    </a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+<!-- Stats Summary -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 h-100 stat-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon stat-icon-primary">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Total Exams</h6>
+                        <h3 class="mb-0 fw-bold"><?= count($exams) ?></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 h-100 stat-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon stat-icon-success">
+                            <i class="bi bi-cloud-check"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Published</h6>
+                        <h3 class="mb-0 fw-bold"><?= count(array_filter($exams, fn($e) => $e['status'] === 'published')) ?></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 h-100 stat-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon stat-icon-warning">
+                            <i class="bi bi-file-earmark"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Draft</h6>
+                        <h3 class="mb-0 fw-bold"><?= count(array_filter($exams, fn($e) => $e['status'] === 'draft')) ?></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Exams Grid -->
+<div class="row">
+    <?php foreach ($exams as $exam): ?>
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 h-100 exam-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1 text-white"><?= esc($exam['title']) ?></h5>
+                    <small class="text-white-50">ID: #<?= $exam['id'] ?></small>
+                </div>
+                <div>
+                    <?php if ($exam['status'] === 'published'): ?>
+                        <span class="badge bg-light text-success">
+                            <i class="bi bi-cloud-check me-1"></i>Published
+                        </span>
+                    <?php else: ?>
+                        <span class="badge bg-light text-warning">
+                            <i class="bi bi-file-earmark me-1"></i>Draft
+                        </span>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <p class="text-muted mb-3"><?= esc($exam['description']) ?></p>
+                
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="info-item">
+                            <i class="bi bi-clock text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">Duration</small>
+                                <strong><?= $exam['duration_minutes'] ?> mins</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-item">
+                            <i class="bi bi-question-circle text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">Questions</small>
+                                <strong><?= $exam['total_questions'] ?> items</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="info-item">
+                            <i class="bi bi-calendar text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">Created</small>
+                                <strong><?= date('d M Y', strtotime($exam['created_at'])) ?></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-white border-top">
+                <div class="d-flex gap-2 flex-wrap">
+                    <?php if ($exam['status'] === 'draft'): ?>
+                        <a href="<?= base_url('admin/exams/' . $exam['id'] . '/publish') ?>" 
+                           class="btn btn-success btn-sm flex-grow-1" 
+                           onclick="return confirm('Publish ujian ini? User akan bisa mengakses ujian ini.')"
+                           title="Publish Ujian">
+                            <i class="bi bi-cloud-upload me-1"></i> Publish
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= base_url('admin/exams/' . $exam['id'] . '/unpublish') ?>" 
+                           class="btn btn-warning btn-sm flex-grow-1" 
+                           onclick="return confirm('Unpublish ujian ini? User tidak bisa akses lagi.')"
+                           title="Unpublish Ujian">
+                            <i class="bi bi-cloud-slash me-1"></i> Unpublish
+                        </a>
+                    <?php endif; ?>
+                    
+                    <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions') ?>" 
+                       class="btn btn-info btn-sm flex-grow-1" 
+                       title="Manage Questions">
+                        <i class="bi bi-list-ul me-1"></i> Questions
+                        <span class="badge bg-white text-info ms-1"><?= $exam['total_questions'] ?></span>
+                    </a>
+                    
+                    <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions/add') ?>" 
+                       class="btn btn-primary btn-sm" 
+                       title="Add Question">
+                        <i class="bi bi-plus-lg"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
+<style>
+/* Stats Cards */
+.stat-card {
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(30, 149, 224, 0.15) !important;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon-primary {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+}
+
+.stat-icon-success {
+    background: linear-gradient(135deg, #059669 0%, var(--success) 100%);
+}
+
+.stat-icon-warning {
+    background: linear-gradient(135deg, #D97706 0%, var(--warning) 100%);
+}
+
+/* Exam Cards */
+.exam-card {
+    transition: all 0.3s ease;
+}
+
+.exam-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(30, 149, 224, 0.2) !important;
+}
+
+.exam-card .card-header {
+    border-radius: 16px 16px 0 0 !important;
+}
+
+.exam-card .card-footer {
+    border-radius: 0 0 16px 16px !important;
+}
+
+/* Info Items */
+.info-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--gray-50);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.info-item:hover {
+    background: var(--primary-lighter);
+}
+
+.info-item i {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .exam-card .card-footer .btn {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+}
+</style>
 <?php endif; ?>
 <?= $this->endSection() ?>

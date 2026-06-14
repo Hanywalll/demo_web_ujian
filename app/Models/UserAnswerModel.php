@@ -7,5 +7,5 @@ class UserAnswerModel extends Model
 {
     protected $table = 'user_answers';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['session_id', 'question_id', 'selected_answer'];
+    protected $allowedFields = ['session_id', 'question_id', 'selected_answer', 'is_doubtful'];
 }

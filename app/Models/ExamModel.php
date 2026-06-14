@@ -13,8 +13,8 @@ class ExamModel extends Model
         'description', 
         'duration_minutes', 
         'total_questions', 
-        'status'
+        'status',
+        'created_at' 
     ];
-    protected $useTimestamps = false;
-    protected $returnType = 'array';
+    protected $useTimestamps = false; 
 }

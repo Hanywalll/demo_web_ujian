@@ -349,6 +349,7 @@ class Exam extends BaseController
     
     public function review($sessionId)
 <<<<<<< HEAD
+<<<<<<< HEAD
     {
         $session = $this->sessionModel->find($sessionId);
         
@@ -551,6 +552,14 @@ public function getExamsData()
     if (!$session || $session['user_id'] !== session()->get('user_id')) {
         return redirect()->to('/exam')->with('error', 'Invalid session');
     }
+=======
+{
+    $session = $this->sessionModel->find($sessionId);
+    
+    if (!$session || $session['user_id'] !== session()->get('user_id')) {
+        return redirect()->to('/exam')->with('error', 'Invalid session');
+    }
+>>>>>>> userfeature
     
     $exam = $this->examModel->find($session['exam_id']);
     $questions = $this->questionModel
@@ -639,6 +648,9 @@ public function getExamsData()
     ];
     
     return view('user/review', $data);
+<<<<<<< HEAD
+>>>>>>> userfeature
+=======
 >>>>>>> userfeature
 }
 }

@@ -45,9 +45,12 @@
                         <h5 class="mb-0 text-white fw-bold"><?= esc($exam['title']) ?></h5>
                         <span class="badge bg-white text-primary bg-opacity-90">
                             <?= $exam['registered'] ? 'Terdaftar' : 'Baru' ?>
+                            
                         </span>
+                        
                     </div>
                 </div>
+                
                 <div class="card-body">
                     <p class="text-muted mb-3"><?= esc($exam['description']) ?></p>
                     <div class="row g-2 mb-3">

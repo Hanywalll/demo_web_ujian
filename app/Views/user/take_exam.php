@@ -24,7 +24,7 @@
                     <div class="mb-3 text-center">
                         <img src="<?= base_url($currentQuestion['image_path']) ?>" 
                             class="img-fluid border rounded shadow-sm" 
-                            alt="Question Image"
+                            alt="Gambar Soal"
                             style="max-height: 400px;"
                             onerror="console.error('Gambar gagal dimuat:', this.src); this.style.display='none';">
                     </div>
@@ -113,9 +113,6 @@ var currentQuestionId = <?= $currentQuestion['id'] ?>;
 var sessionId = <?= $session['id'] ?>;
 var localStorageKey = 'examAnswers_' + sessionId;
 
-// ========================================
-// TIMER FUNCTIONS
-// ========================================
 function updateTimer() {
     var now = new Date().getTime();
     var distance = examEndTimestamp - now;
@@ -141,9 +138,6 @@ function updateTimer() {
 var timerInterval = setInterval(updateTimer, 1000);
 updateTimer();
 
-// ========================================
-// NAVIGATION INDICATOR
-// ========================================
 function updateNavigationIndicator(questionId, status) {
     var navBtn = document.querySelector('.nav-btn-' + questionId);
     if (!navBtn) return;
@@ -159,9 +153,6 @@ function updateNavigationIndicator(questionId, status) {
     }
 }
 
-// ========================================
-// LOCALSTORAGE BACKUP FUNCTIONS
-// ========================================
 function saveToLocalStorage(questionId, answer, isDoubtful) {
     var savedAnswers = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
     savedAnswers[questionId] = { 
@@ -191,13 +182,10 @@ function syncLocalStorageToServer() {
     }
     
     if (hasData) {
-        console.log('✅ Sync localStorage ke server selesai');
+        console.log('Sync localStorage ke server selesai');
     }
 }
 
-// ========================================
-// AJAX SAVE FUNCTION
-// ========================================
 function sendAnswerToServer(questionId, answer, isDoubtful, showLog = true) {
     var csrfName = document.querySelector('meta[name="csrf-name"]').content;
     var csrfHash = document.querySelector('meta[name="csrf-token"]').content;
@@ -224,36 +212,27 @@ function sendAnswerToServer(questionId, answer, isDoubtful, showLog = true) {
             }
             
             if (showLog) {
-                console.log('✅ Jawaban tersimpan:', questionId, answer, isDoubtful ? '(ragu)' : '');
+                console.log('Jawaban tersimpan:', questionId, answer, isDoubtful ? '(ragu)' : '');
             }
             
-            // Update indikator navigasi
             var status = isDoubtful ? 'doubtful' : (answer ? 'answered' : 'unanswered');
             updateNavigationIndicator(questionId, status);
             
-            // Hapus dari localStorage karena sudah tersimpan di server
             removeFromLocalStorage(questionId);
         } else {
-            console.error('❌ Gagal simpan:', data);
+            console.error('Gagal simpan:', data);
         }
     })
     .catch(error => {
-        console.error('❌ Error AJAX:', error);
+        console.error('Error AJAX:', error);
     });
 }
 
-// Wrapper function: simpan ke localStorage dulu, lalu kirim ke server
 function saveAnswerToServer(questionId, answer, isDoubtful = false) {
-    // 1. Simpan ke localStorage sebagai backup (instant)
     saveToLocalStorage(questionId, answer, isDoubtful);
-    
-    // 2. Kirim ke server (async)
     sendAnswerToServer(questionId, answer, isDoubtful, true);
 }
 
-// ========================================
-// POLLING: Sync timer setiap 3 detik
-// ========================================
 setInterval(function() {
     var csrfName = document.querySelector('meta[name="csrf-name"]').content;
     var csrfHash = document.querySelector('meta[name="csrf-token"]').content;
@@ -285,14 +264,9 @@ setInterval(function() {
     });
 }, 2000);
 
-// ========================================
-// EVENT LISTENERS
-// ========================================
 document.addEventListener('DOMContentLoaded', function() {
-    // ✅ SYNC: Kembalikan jawaban dari localStorage saat halaman load
     syncLocalStorageToServer();
     
-    // ✅ Event listener untuk radio button
     document.querySelectorAll('.answer-radio').forEach(function(radio) {
         radio.addEventListener('change', function() {
             var questionId = this.dataset.questionId;
@@ -301,18 +275,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // ✅ Event listener untuk tombol ragu-ragu
     document.getElementById('markDoubtful').addEventListener('click', function() {
         var questionId = this.dataset.questionId;
         
-        // Ambil jawaban yang sedang dipilih (kalau ada)
         var selectedRadio = document.querySelector('.answer-radio[data-question-id="' + questionId + '"]:checked');
         var currentAnswer = selectedRadio ? selectedRadio.value : '';
         
-        // Simpan jawaban + flag ragu
         saveAnswerToServer(questionId, currentAnswer, true);
         
-        // Flash effect untuk feedback visual
         var navBtn = document.querySelector('.nav-btn-' + questionId);
         if (navBtn) {
             navBtn.style.transform = 'scale(1.3)';
@@ -321,26 +291,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         }
         
-        // Update indikator langsung
         updateNavigationIndicator(questionId, 'doubtful');
     });
     
-    // ✅ Event listener untuk tombol selesai
     document.getElementById('finishExam').addEventListener('click', function() {
         if (confirm('Yakin ingin menyelesaikan ujian?')) {
-            // Sync semua jawaban yang masih di localStorage sebelum finish
             syncLocalStorageToServer();
             
-            // Tunggu sebentar agar AJAX selesai, lalu redirect
             setTimeout(function() {
-                // Hapus localStorage setelah ujian selesai
                 localStorage.removeItem(localStorageKey);
                 window.location.href = '<?= base_url('exam/finish/' . $session['id']) ?>';
             }, 500);
         }
     });
     
-    // ✅ PERINGATAN: Kalau user coba keluar tanpa finish
     window.addEventListener('beforeunload', function(e) {
         var savedAnswers = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
         if (Object.keys(savedAnswers).length > 0) {

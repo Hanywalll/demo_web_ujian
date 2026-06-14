@@ -27,42 +27,59 @@ class Exam extends BaseController
     }
     
     public function index()
-{
-    $userId = session()->get('user_id');
-    
-    $this->sessionModel
-        ->where('user_id', $userId)
-        ->where('status', 'ongoing')
-        ->where('end_time <', date('Y-m-d H:i:s'))
-        ->set('status', 'expired')
-        ->update();
-    
-    $exams = $this->examModel->where('status', 'published')->findAll();
-    
-    foreach ($exams as &$exam) {
-        $registration = $this->registrationModel
-            ->where('user_id', $userId)
-            ->where('exam_id', $exam['id'])
-            ->first();
+    {
+        $userId = session()->get('user_id');
+        $exams = $this->examModel->where('status', 'published')->findAll();
         
-        $exam['registered'] = $registration ? true : false;
-        
-        if ($registration) {
-            $exam['latest_session'] = $this->sessionModel
+        foreach ($exams as &$exam) {
+            $registration = $this->registrationModel
                 ->where('user_id', $userId)
                 ->where('exam_id', $exam['id'])
-                ->orderBy('id', 'DESC')
                 ->first();
-        } else {
-            $exam['latest_session'] = null;
+            
+            $exam['registered'] = $registration ? true : false;
+            
+            if ($registration) {
+                $exam['latest_session'] = $this->sessionModel
+                    ->where('user_id', $userId)
+                    ->where('exam_id', $exam['id'])
+                    ->orderBy('id', 'DESC')
+                    ->first();
+            } else {
+                $exam['latest_session'] = null;
+            }
+            
+            $exam['sort_priority'] = $this->calculateExamPriority($exam);
         }
+        
+        usort($exams, function($a, $b) {
+            return $a['sort_priority'] <=> $b['sort_priority'];
+        });
+        
+        return view('user/exams', [
+            'title' => 'Ujian Tersedia',
+            'exams' => $exams
+        ]);
+    }
+
+    private function calculateExamPriority($exam)
+    {
+        if (!$exam['registered']) {
+            return 1;
+        }
+        
+        $latestSession = $exam['latest_session'] ?? null;
+        if ($latestSession && $latestSession['status'] === 'ongoing' && strtotime($latestSession['end_time']) > time()) {
+            return 2;
+        }
+        
+        if (!$latestSession) {
+            return 3;
+        }
+        
+        return 4;
     }
     
-    return view('user/exams', [
-        'title' => 'Ujian Tersedia',
-        'exams' => $exams
-    ]);
-}
     public function getExamsData()
     {
         if (!$this->request->isAJAX()) {
@@ -87,6 +104,7 @@ class Exam extends BaseController
             $buttonUrl = base_url('exam/register/' . $exam['id']);
             $buttonClass = 'primary';
             $score = null;
+            $sortPriority = 1;
             
             if ($registered) {
                 $latestSession = $this->sessionModel
@@ -100,10 +118,11 @@ class Exam extends BaseController
                     
                     if ($isOngoing) {
                         $buttonType = 'continue';
-                        $buttonLabel = 'Lanjutkan Ujian';
+                        $buttonLabel = 'Lanjutkan';
                         $buttonIcon = 'bi-play-circle';
                         $buttonUrl = base_url('exam/start/' . $exam['id']);
                         $buttonClass = 'warning';
+                        $sortPriority = 2;
                     } elseif (in_array($latestSession['status'], ['finished', 'expired'])) {
                         $buttonType = 'review';
                         $buttonLabel = 'Lihat Hasil';
@@ -111,12 +130,14 @@ class Exam extends BaseController
                         $buttonUrl = base_url('exam/review/' . $latestSession['id']);
                         $buttonClass = 'secondary';
                         $score = $latestSession['score'] ?? null;
+                        $sortPriority = 4;
                     } else {
                         $buttonType = 'start';
                         $buttonLabel = 'Mulai Ujian';
                         $buttonIcon = 'bi-play-circle';
                         $buttonUrl = base_url('exam/start/' . $exam['id']);
                         $buttonClass = 'success';
+                        $sortPriority = 3;
                     }
                 } else {
                     $buttonType = 'start';
@@ -124,6 +145,7 @@ class Exam extends BaseController
                     $buttonIcon = 'bi-play-circle';
                     $buttonUrl = base_url('exam/start/' . $exam['id']);
                     $buttonClass = 'success';
+                    $sortPriority = 3;
                 }
             }
             
@@ -141,8 +163,13 @@ class Exam extends BaseController
                 'button_class' => $buttonClass,
                 'score' => $score,
                 'header_type' => $registered ? 'success' : 'primary',
+                'sort_priority' => $sortPriority
             ];
         }
+        
+        usort($formattedExams, function($a, $b) {
+            return $a['sort_priority'] <=> $b['sort_priority'];
+        });
         
         return $this->response->setJSON([
             'success' => true,
@@ -178,7 +205,7 @@ class Exam extends BaseController
         $exam = $this->examModel->find($examId);
         
         if (!$exam || $exam['status'] !== 'published') {
-            return redirect()->to('/exam')->with('error', 'Exam not available');
+            return redirect()->to('/exam')->with('error', 'Ujian tidak tersedia');
         }
         
         $registration = $this->registrationModel
@@ -187,7 +214,7 @@ class Exam extends BaseController
             ->first();
         
         if (!$registration) {
-            return redirect()->to('/exam')->with('error', 'Please register first');
+            return redirect()->to('/exam')->with('error', 'Silakan daftar terlebih dahulu');
         }
         
         $allSessions = $this->sessionModel
@@ -231,7 +258,7 @@ class Exam extends BaseController
             ->first();
         
         if (!$firstQuestion) {
-            return redirect()->to('/exam')->with('error', 'No questions available');
+            return redirect()->to('/exam')->with('error', 'Ujian belum memiliki soal');
         }
         
         return redirect()->to('/exam/take/' . $sessionId . '/question/' . $firstQuestion['id']);
@@ -357,11 +384,11 @@ class Exam extends BaseController
         
         $session = $this->sessionModel->find($sessionId);
         if (!$session || $session['status'] !== 'ongoing' || $session['user_id'] !== session()->get('user_id')) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Invalid session']);
+            return $this->response->setJSON(['success' => false, 'message' => 'Sesi tidak valid']);
         }
         
         if (strtotime($session['end_time']) < time()) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Time is up']);
+            return $this->response->setJSON(['success' => false, 'message' => 'Waktu habis']);
         }
         
         $existingAnswer = $this->answerModel
@@ -384,7 +411,7 @@ class Exam extends BaseController
         
         return $this->response->setJSON([
             'success' => true, 
-            'message' => 'Answer saved',
+            'message' => 'Jawaban tersimpan',
             'csrf_token' => csrf_hash()
         ]);
     }
@@ -399,7 +426,7 @@ class Exam extends BaseController
         $session = $this->sessionModel->find($sessionId);
         
         if (!$session) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Session not found']);
+            return $this->response->setJSON(['success' => false, 'message' => 'Sesi tidak ditemukan']);
         }
         
         return $this->response->setJSON([
@@ -415,22 +442,15 @@ class Exam extends BaseController
         $session = $this->sessionModel->find($sessionId);
         
         if (!$session || $session['user_id'] !== session()->get('user_id')) {
-            return redirect()->to('/exam')->with('error', 'Invalid session');
+            return redirect()->to('/exam')->with('error', 'Sesi tidak valid');
         }
-        
-        // ✅ PERBAIKAN: Cek apakah waktu di server sudah habis
-        $isTimeExpired = strtotime($session['end_time']) <= time();
         
         $startTime = strtotime($session['start_time']);
         $endTime = time();
         $timeTaken = ($endTime - $startTime) / 60;
         
-        // ✅ PERBAIKAN: Tentukan status berdasarkan waktu
-        // Jika waktu habis -> 'expired', Jika belum habis -> 'finished'
-        $finalStatus = $isTimeExpired ? 'expired' : 'finished';
-        
         $this->sessionModel->update($sessionId, [
-            'status' => $finalStatus,
+            'status' => 'finished', 
             'total_time_taken' => round($timeTaken, 2)
         ]);
         
@@ -442,7 +462,7 @@ class Exam extends BaseController
         $session = $this->sessionModel->find($sessionId);
         
         if (!$session || $session['user_id'] !== session()->get('user_id')) {
-            return redirect()->to('/exam')->with('error', 'Invalid session');
+            return redirect()->to('/exam')->with('error', 'Sesi tidak valid');
         }
         
         $exam = $this->examModel->find($session['exam_id']);
@@ -515,7 +535,7 @@ class Exam extends BaseController
         elseif ($score >= 60) $grade = 'D';
         
         $data = [
-            'title' => 'Review: ' . $exam['title'],
+            'title' => 'Hasil: ' . $exam['title'],
             'exam' => $exam,
             'session' => $session,
             'questions' => $questions,

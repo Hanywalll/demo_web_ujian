@@ -211,6 +211,9 @@ function addExtraTime(sessionId) {
             }
             
             delete inputValues[sessionId];
+            
+            alert('Berhasil menambahkan ' + extraMinutes + ' menit waktu ujian untuk peserta ini!');
+            
             updateExtraTimeData();
         } else {
             alert('Gagal: ' + (data.message || 'Terjadi kesalahan'));

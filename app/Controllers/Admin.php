@@ -61,7 +61,7 @@ class Admin extends BaseController
         ];
         
         $data = [
-            'title' => 'Admin Dashboard',
+            'title' => 'Dasbor Admin',
             'totalExams' => $totalExams,
             'totalUsers' => $totalUsers,
             'totalQuestions' => $totalQuestions,
@@ -83,11 +83,12 @@ class Admin extends BaseController
         
         $startDate = $this->request->getPost('start_date') ?: date('Y-m-01');
         $endDate = $this->request->getPost('end_date') ?: date('Y-m-d');
+        
         $this->examSessionModel
-        ->where('status', 'ongoing')
-        ->where('end_time <', date('Y-m-d H:i:s')) 
-        ->set('status', 'expired')
-        ->update();
+            ->where('status', 'ongoing')
+            ->where('end_time <', date('Y-m-d H:i:s'))
+            ->set('status', 'finished')
+            ->update();
 
         $totalExams = $this->examModel->countAll();
         $totalUsers = $this->userModel->where('role', 'user')->countAllResults();
@@ -118,7 +119,6 @@ class Admin extends BaseController
             'total_sessions' => count($examSessions),
             'completed' => count(array_filter($examSessions, fn($s) => $s['status'] === 'finished')),
             'ongoing' => count(array_filter($examSessions, fn($s) => $s['status'] === 'ongoing')),
-            'expired' => count(array_filter($examSessions, fn($s) => $s['status'] === 'expired')),
         ];
         
         $formattedSessions = [];
@@ -203,7 +203,7 @@ class Admin extends BaseController
         $exams = $this->examModel->orderBy('id', 'DESC')->findAll();
         
         $data = [
-            'title' => 'Manage Exams',
+            'title' => 'Kelola Ujian',
             'exams' => $exams
         ];
         
@@ -227,23 +227,22 @@ class Admin extends BaseController
                     'description' => $this->request->getPost('description'),
                     'duration_minutes' => (int)$this->request->getPost('duration_minutes'),
                     'total_questions' => 0,
-                    'status' => $status,
+                    'status' => 'draft',
                     'created_at' => date('Y-m-d H:i:s'),
                 ];
                 
                 $newExamId = $this->examModel->insert($data);
                 
                 if ($status === 'published') {
-                    $this->examModel->update($newExamId, ['status' => 'draft']);
                     return redirect()->to('/admin/exams/' . $newExamId . '/questions/add')
-                        ->with('warning', 'Ujian dibuat sebagai Draft. Tambahkan minimal 1 soal sebelum publish.');
+                        ->with('info', 'Ujian disimpan sebagai draft sementara. Setelah Anda menambahkan soal pertama, ujian akan otomatis diterbitkan.');
                 }
                 
-                return redirect()->to('/admin/exams')->with('success', 'Ujian berhasil dibuat sebagai Draft!');
+                return redirect()->to('/admin/exams')->with('success', 'Ujian berhasil dibuat sebagai Draft! Anda bisa menambahkan soal dan menerbitkannya nanti.');
             }
         }
         
-        return view('admin/exams/create', ['title' => 'Create New Exam']);
+        return view('admin/exams/create', ['title' => 'Buat Ujian Baru']);
     }
     
     public function publishExam($examId)
@@ -275,11 +274,11 @@ class Admin extends BaseController
     {
         $exam = $this->examModel->find($examId);
         if (!$exam) {
-            return redirect()->to('/admin/exams')->with('error', 'Exam not found');
+            return redirect()->to('/admin/exams')->with('error', 'Ujian tidak ditemukan');
         }
         
         $data = [
-            'title' => 'Manage Questions - ' . $exam['title'],
+            'title' => 'Kelola Soal - ' . $exam['title'],
             'exam' => $exam,
             'questions' => $this->questionModel->where('exam_id', $examId)->orderBy('order', 'ASC')->findAll()
         ];
@@ -291,7 +290,7 @@ class Admin extends BaseController
     {
         $exam = $this->examModel->find($examId);
         if (!$exam) {
-            return redirect()->to('/admin/exams')->with('error', 'Exam not found');
+            return redirect()->to('/admin/exams')->with('error', 'Ujian tidak ditemukan');
         }
         
         if ($this->request->getMethod() === 'POST') {
@@ -344,11 +343,26 @@ class Admin extends BaseController
                 $this->questionModel->insert($questionData);
                 
                 $totalQuestions = $this->questionModel->where('exam_id', $examId)->countAllResults();
+                
+                $autoPublished = false;
+                if ($totalQuestions === 1 && $exam['status'] === 'draft') {
+                    $createdAt = strtotime($exam['created_at']);
+                    $now = time();
+                    
+                    if (($now - $createdAt) < 300) {
+                        $this->examModel->update($examId, ['status' => 'published']);
+                        $autoPublished = true;
+                    }
+                }
+                
                 $this->examModel->update($examId, ['total_questions' => $totalQuestions]);
                 
-                $message = 'Soal berhasil ditambahkan!';
-                if ($totalQuestions === 1) {
-                    $message .= ' Sekarang Anda bisa publish ujian ini.';
+                if ($autoPublished) {
+                    $message = 'Soal pertama berhasil ditambahkan! Ujian otomatis diterbitkan dan sekarang bisa diakses peserta.';
+                } elseif ($totalQuestions === 1) {
+                    $message = 'Soal pertama berhasil ditambahkan! Anda bisa menerbitkan ujian ini kapan saja dari halaman Kelola Ujian.';
+                } else {
+                    $message = 'Soal berhasil ditambahkan!';
                 }
                 
                 return redirect()->to('/admin/exams/' . $examId . '/questions')->with('success', $message);
@@ -358,7 +372,7 @@ class Admin extends BaseController
         $questionCount = $this->questionModel->where('exam_id', $examId)->countAllResults();
         
         return view('admin/questions/add', [
-            'title' => 'Add Question',
+            'title' => 'Tambah Soal',
             'exam' => $exam,
             'questionCount' => $questionCount
         ]);
@@ -400,7 +414,7 @@ class Admin extends BaseController
         }
         
         $data = [
-            'title' => 'Add Extra Time',
+            'title' => 'Tambah Waktu',
         ];
         
         return view('admin/extra_time', $data);

@@ -348,6 +348,7 @@ class Exam extends BaseController
     }
     
     public function review($sessionId)
+<<<<<<< HEAD
     {
         $session = $this->sessionModel->find($sessionId);
         
@@ -543,5 +544,101 @@ public function getExamsData()
         'exams' => $formattedExams,
         'csrf_token' => csrf_hash()
     ]);
+=======
+{
+    $session = $this->sessionModel->find($sessionId);
+    
+    if (!$session || $session['user_id'] !== session()->get('user_id')) {
+        return redirect()->to('/exam')->with('error', 'Invalid session');
+    }
+    
+    $exam = $this->examModel->find($session['exam_id']);
+    $questions = $this->questionModel
+        ->where('exam_id', $session['exam_id'])
+        ->orderBy('order', 'ASC')
+        ->findAll();
+    
+    $answers = $this->answerModel
+        ->where('session_id', $sessionId)
+        ->findAll();
+    
+    $answersMap = [];
+    foreach ($answers as $answer) {
+        $answersMap[$answer['question_id']] = $answer['selected_answer'];
+    }
+    
+    // ✅ HITUNG SKOR
+    $totalQuestions = count($questions);
+    $correctCount = 0;
+    $wrongCount = 0;
+    $emptyCount = 0;
+    $doubtfulCount = 0;
+    $questionResults = [];
+    
+    foreach ($questions as $question) {
+        $result = [];
+        $result['question'] = $question;
+        
+        $answerData = $answersMap[$question['id']] ?? null;
+        $userAnswer = $answerData['selected_answer'] ?? null;
+        $isDoubtful = $answerData['is_doubtful'] ?? 0;
+        $correctAnswer = $question['correct_answer'];
+        
+        $result['user_answer'] = $userAnswer;
+        $result['correct_answer'] = $correctAnswer;
+        $result['is_doubtful'] = $isDoubtful;
+        
+        if ($userAnswer === null || $userAnswer === '') {
+            $emptyCount++;
+            $result['status'] = 'empty';
+        } elseif ($isDoubtful) {
+            $doubtfulCount++;
+            if ($userAnswer === $correctAnswer) {
+                $correctCount++;
+                $result['status'] = 'doubtful_correct';
+            } else {
+                $wrongCount++;
+                $result['status'] = 'doubtful_wrong';
+            }
+        } elseif ($userAnswer === $correctAnswer) {
+            $correctCount++;
+            $result['status'] = 'correct';
+        } else {
+            $wrongCount++;
+            $result['status'] = 'wrong';
+        }
+        
+        $questionResults[] = $result;
+    }
+    
+    // ✅ HITUNG NILAI (0-100)
+    $score = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100, 2) : 0;
+    
+    // ✅ TENTUKAN GRADE
+    $grade = 'E';
+    if ($score >= 90) $grade = 'A';
+    elseif ($score >= 80) $grade = 'B';
+    elseif ($score >= 70) $grade = 'C';
+    elseif ($score >= 60) $grade = 'D';
+    
+    // ✅ KIRIM SEMUA DATA KE VIEW
+    $data = [
+        'title' => 'Review: ' . $exam['title'],
+        'exam' => $exam,
+        'session' => $session,
+        'questions' => $questions,
+        'answersMap' => $answersMap,
+        'questionResults' => $questionResults,
+        'totalQuestions' => $totalQuestions,
+        'correctCount' => $correctCount,
+        'wrongCount' => $wrongCount,
+        'emptyCount' => $emptyCount,
+        'doubtfulCount' => $doubtfulCount,
+        'score' => $score,      // ✅ PASTIKAN ADA
+        'grade' => $grade       // ✅ PASTIKAN ADA
+    ];
+    
+    return view('user/review', $data);
+>>>>>>> userfeature
 }
 }

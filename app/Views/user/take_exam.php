@@ -123,7 +123,7 @@ function updateTimer() {
     if (distance <= 0) {
         clearInterval(timerInterval);
         document.getElementById('timer').innerHTML = "WAKTU HABIS!";
-        alert('Waktu habis! Ujian akan diselesaikan.');
+        
         window.location.href = '<?= base_url('exam/finish/' . $session['id']) ?>';
         return;
     }

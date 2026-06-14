@@ -83,7 +83,12 @@ class Admin extends BaseController
         
         $startDate = $this->request->getPost('start_date') ?: date('Y-m-01');
         $endDate = $this->request->getPost('end_date') ?: date('Y-m-d');
-        
+        $this->examSessionModel
+        ->where('status', 'ongoing')
+        ->where('end_time <', date('Y-m-d H:i:s')) 
+        ->set('status', 'expired')
+        ->update();
+
         $totalExams = $this->examModel->countAll();
         $totalUsers = $this->userModel->where('role', 'user')->countAllResults();
         $totalQuestions = $this->questionModel->countAll();

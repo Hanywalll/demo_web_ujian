@@ -27,35 +27,42 @@ class Exam extends BaseController
     }
     
     public function index()
-    {
-        $userId = session()->get('user_id');
-        $exams = $this->examModel->where('status', 'published')->findAll();
+{
+    $userId = session()->get('user_id');
+    
+    $this->sessionModel
+        ->where('user_id', $userId)
+        ->where('status', 'ongoing')
+        ->where('end_time <', date('Y-m-d H:i:s'))
+        ->set('status', 'expired')
+        ->update();
+    
+    $exams = $this->examModel->where('status', 'published')->findAll();
+    
+    foreach ($exams as &$exam) {
+        $registration = $this->registrationModel
+            ->where('user_id', $userId)
+            ->where('exam_id', $exam['id'])
+            ->first();
         
-        foreach ($exams as &$exam) {
-            $registration = $this->registrationModel
+        $exam['registered'] = $registration ? true : false;
+        
+        if ($registration) {
+            $exam['latest_session'] = $this->sessionModel
                 ->where('user_id', $userId)
                 ->where('exam_id', $exam['id'])
+                ->orderBy('id', 'DESC')
                 ->first();
-            
-            $exam['registered'] = $registration ? true : false;
-            
-            if ($registration) {
-                $exam['latest_session'] = $this->sessionModel
-                    ->where('user_id', $userId)
-                    ->where('exam_id', $exam['id'])
-                    ->orderBy('id', 'DESC')
-                    ->first();
-            } else {
-                $exam['latest_session'] = null;
-            }
+        } else {
+            $exam['latest_session'] = null;
         }
-        
-        return view('user/exams', [
-            'title' => 'Available Exams',
-            'exams' => $exams
-        ]);
     }
     
+    return view('user/exams', [
+        'title' => 'Ujian Tersedia',
+        'exams' => $exams
+    ]);
+}
     public function getExamsData()
     {
         if (!$this->request->isAJAX()) {
@@ -411,18 +418,25 @@ class Exam extends BaseController
             return redirect()->to('/exam')->with('error', 'Invalid session');
         }
         
+        // ✅ PERBAIKAN: Cek apakah waktu di server sudah habis
+        $isTimeExpired = strtotime($session['end_time']) <= time();
+        
         $startTime = strtotime($session['start_time']);
         $endTime = time();
         $timeTaken = ($endTime - $startTime) / 60;
         
+        // ✅ PERBAIKAN: Tentukan status berdasarkan waktu
+        // Jika waktu habis -> 'expired', Jika belum habis -> 'finished'
+        $finalStatus = $isTimeExpired ? 'expired' : 'finished';
+        
         $this->sessionModel->update($sessionId, [
-            'status' => 'finished',
+            'status' => $finalStatus,
             'total_time_taken' => round($timeTaken, 2)
         ]);
         
         return redirect()->to('/exam/review/' . $sessionId);
     }
-    
+        
     public function review($sessionId)
     {
         $session = $this->sessionModel->find($sessionId);

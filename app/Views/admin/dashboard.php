@@ -149,11 +149,19 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-3 rounded-3 stat-box-danger">
-                            <h4 class="fw-bold text-white mb-1" id="statExpired"><?= $periodStats['expired'] ?? 0 ?></h4>
-                            <small class="text-white fw-semibold opacity-75">Expired</small>
-                        </div>
-                    </div>
+    <div class="p-3 rounded-3 stat-box-gradient-danger p-4 rounded-4 h-100 text-white shadow-sm position-relative">
+        <i class="bi bi-x-circle-fill fs-2 opacity-75"></i>
+        <h3 class="fw-bold mt-2 mb-0" id="statExpired"><?= $periodStats['expired'] ?? 0 ?></h3>
+        <small class="opacity-75 fw-semibold">Expired</small>
+        
+        <!-- ✅ KETERANGAN / LEGEND -->
+        <div class="mt-2 pt-2 border-top border-white border-opacity-25">
+            <small class="d-block" style="font-size: 0.7rem; opacity: 0.8;">
+                <i class="bi bi-info-circle me-1"></i> Waktu habis tanpa klik selesai
+            </small>
+        </div>
+    </div>
+</div>
                 </div>
             </div>
         </div>

@@ -25,6 +25,21 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
+    <?php
+    // ✅ DETEKSI URL AKTIF UNTUK NAVBAR INDICATOR
+    $currentPath = service('request')->getUri()->getPath();
+    $currentPath = '/' . trim($currentPath, '/');
+    if ($currentPath === '/') $currentPath = '/';
+    
+    // Helper function untuk cek active
+    $isActive = function($path) use ($currentPath) {
+        if ($path === '/') {
+            return $currentPath === '/';
+        }
+        return strpos($currentPath, $path) === 0;
+    };
+    ?>
+    
     <style>
         :root {
             --primary-dark: #3264B9;
@@ -45,10 +60,29 @@
             font-family: 'Inter', sans-serif;
         }
         
+        /* ✅ STICKY FOOTER LAYOUT */
+        html, body {
+            height: 100%;
+        }
+        
         body {
             background: linear-gradient(135deg, var(--primary-lighter) 0%, #ffffff 100%);
             min-height: 100vh;
             color: var(--gray-800);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        main {
+            flex: 1 0 auto;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        
+        footer {
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-600) 100%);
+            color: white;
         }
         
         /* Modern Navbar */
@@ -56,6 +90,7 @@
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%) !important;
             box-shadow: 0 4px 20px rgba(30, 149, 224, 0.3);
             padding: 1rem 0;
+            flex-shrink: 0;
         }
         
         .navbar-brand {
@@ -66,14 +101,56 @@
         
         .nav-link {
             font-weight: 500;
-            margin: 0 0.5rem;
+            margin: 0 0.25rem;
             border-radius: 8px;
             transition: all 0.3s ease;
+            position: relative;
+            padding: 0.5rem 1rem !important;
         }
         
         .nav-link:hover {
             background: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
+        }
+        
+        /* ✅ ACTIVE NAV LINK INDICATOR */
+        .nav-link.active-link {
+            background: rgba(255, 255, 255, 0.2) !important;
+            font-weight: 700 !important;
+            color: white !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .nav-link.active-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background: white;
+            border-radius: 3px 3px 0 0;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                width: 0;
+                opacity: 0;
+            }
+            to {
+                width: 60%;
+                opacity: 1;
+            }
+        }
+        
+        /* User info badge di navbar */
+        .nav-user-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 0.4rem 1rem !important;
+            margin-right: 0.5rem;
         }
         
         /* Modern Cards */
@@ -248,6 +325,34 @@
             margin-bottom: 0.5rem;
         }
         
+
+        .logout-btn {
+            background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%) !important;
+            color: white !important;
+            border: 2px solid rgba(255, 255, 255, 0.3) !important;
+            border-radius: 30px !important;
+            padding: 0.5rem 1.25rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #B91C1C 0%, #DC2626 100%) !important;
+            color: white !important;
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+            border-color: rgba(255, 255, 255, 0.5) !important;
+        }
+
+        .logout-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .logout-btn:hover i {
+            transform: translateX(3px);
+        }
         /* Alerts */
         .alert {
             border-radius: 12px;
@@ -281,13 +386,6 @@
             letter-spacing: -0.5px;
         }
         
-        /* Footer */
-        footer {
-            background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-600) 100%);
-            color: white;
-            margin-top: auto;
-        }
-        
         /* Animations */
         @keyframes fadeInUp {
             from {
@@ -316,6 +414,15 @@
             
             h2 {
                 font-size: 1.5rem;
+            }
+            
+            .navbar-nav {
+                margin-top: 1rem;
+                padding: 0.5rem 0;
+            }
+            
+            .nav-link {
+                margin: 0.25rem 0;
             }
         }
         
@@ -355,8 +462,9 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
+                    <!-- User Info -->
                     <li class="nav-item">
-                        <span class="nav-link text-light">
+                        <span class="nav-link nav-user-info text-light">
                             <i class="bi bi-person-circle me-1"></i> 
                             <?= esc(session()->get('name')) ?> 
                             <span class="badge bg-light text-primary ms-1"><?= ucfirst(session()->get('role')) ?></span>
@@ -364,31 +472,39 @@
                     </li>
                     
                     <?php if (session()->get('role') === 'admin'): ?>
+                    <!-- ✅ Admin Menu dengan Active Indicator -->
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= base_url('admin') ?>">
+                        <a class="nav-link <?= $isActive('/admin') && $currentPath === '/admin' ? 'active-link' : '' ?>" 
+                           href="<?= base_url('admin') ?>">
                             <i class="bi bi-speedometer2 me-1"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= base_url('admin/exams') ?>">
+                        <a class="nav-link <?= $isActive('/admin/exams') ? 'active-link' : '' ?>" 
+                           href="<?= base_url('admin/exams') ?>">
                             <i class="bi bi-journal-text me-1"></i> Exams
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= base_url('admin/add-extra-time') ?>">
+                        <a class="nav-link <?= $isActive('/admin/add-extra-time') ? 'active-link' : '' ?>" 
+                           href="<?= base_url('admin/add-extra-time') ?>">
                             <i class="bi bi-clock-history me-1"></i> Extra Time
                         </a>
                     </li>
                     <?php else: ?>
+                    <!-- ✅ User Menu dengan Active Indicator -->
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= base_url('exam') ?>">
+                        <a class="nav-link <?= $isActive('/exam') ? 'active-link' : '' ?>" 
+                           href="<?= base_url('exam') ?>">
                             <i class="bi bi-list-check me-1"></i> My Exams
                         </a>
                     </li>
                     <?php endif; ?>
                     
+                  
                     <li class="nav-item ms-2">
-                        <a class="nav-link text-danger" href="<?= base_url('logout') ?>">
+                        <a class="nav-link logout-btn" href="<?= base_url('logout') ?>" 
+                        onclick="return confirm('Yakin ingin keluar dari akun?')">
                             <i class="bi bi-box-arrow-right me-1"></i> Logout
                         </a>
                     </li>
@@ -398,7 +514,7 @@
         </div>
     </nav>
 
-    <main class="py-5">
+    <main>
         <div class="container">
             <?php if (session()->getFlashdata('success')): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -437,7 +553,7 @@
         </div>
     </main>
 
-    <footer class="py-4 mt-auto">
+    <footer class="py-4">
         <div class="container text-center">
             <p class="mb-0">
                 <i class="bi bi-mortarboard-fill me-2"></i>&copy; <?= date('Y') ?> Online Exam System. All rights reserved.

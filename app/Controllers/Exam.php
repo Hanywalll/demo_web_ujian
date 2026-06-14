@@ -32,15 +32,116 @@ class Exam extends BaseController
         $exams = $this->examModel->where('status', 'published')->findAll();
         
         foreach ($exams as &$exam) {
-            $exam['registered'] = $this->registrationModel
+            $registration = $this->registrationModel
                 ->where('user_id', $userId)
                 ->where('exam_id', $exam['id'])
-                ->first() ? true : false;
+                ->first();
+            
+            $exam['registered'] = $registration ? true : false;
+            
+            if ($registration) {
+                $exam['latest_session'] = $this->sessionModel
+                    ->where('user_id', $userId)
+                    ->where('exam_id', $exam['id'])
+                    ->orderBy('id', 'DESC')
+                    ->first();
+            } else {
+                $exam['latest_session'] = null;
+            }
         }
         
         return view('user/exams', [
             'title' => 'Available Exams',
             'exams' => $exams
+        ]);
+    }
+    
+    // ✅ Endpoint untuk Real-time User Exams
+    public function getExamsData()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(403);
+        }
+        
+        $userId = session()->get('user_id');
+        $exams = $this->examModel->where('status', 'published')->findAll();
+        
+        $formattedExams = [];
+        foreach ($exams as $exam) {
+            $registration = $this->registrationModel
+                ->where('user_id', $userId)
+                ->where('exam_id', $exam['id'])
+                ->first();
+            
+            $registered = $registration ? true : false;
+            $latestSession = null;
+            $buttonType = 'register'; 
+            $buttonLabel = 'Daftar Ujian';
+            $buttonIcon = 'bi-pencil-square';
+            $buttonUrl = base_url('exam/register/' . $exam['id']);
+            $buttonClass = 'primary';
+            $score = null;
+            
+            if ($registered) {
+                $latestSession = $this->sessionModel
+                    ->where('user_id', $userId)
+                    ->where('exam_id', $exam['id'])
+                    ->orderBy('id', 'DESC')
+                    ->first();
+                
+                if ($latestSession) {
+                    $isOngoing = ($latestSession['status'] === 'ongoing' && strtotime($latestSession['end_time']) > time());
+                    
+                    if ($isOngoing) {
+                        $buttonType = 'continue';
+                        $buttonLabel = 'Lanjutkan Ujian';
+                        $buttonIcon = 'bi-play-circle';
+                        $buttonUrl = base_url('exam/start/' . $exam['id']);
+                        $buttonClass = 'warning';
+                    } elseif (in_array($latestSession['status'], ['finished', 'expired'])) {
+                        $buttonType = 'review';
+                        $buttonLabel = 'Lihat Hasil';
+                        $buttonIcon = 'bi-eye';
+                        $buttonUrl = base_url('exam/review/' . $latestSession['id']);
+                        $buttonClass = 'secondary';
+                        $score = $latestSession['score'] ?? null;
+                    } else {
+                        $buttonType = 'start';
+                        $buttonLabel = 'Mulai Ujian';
+                        $buttonIcon = 'bi-play-circle';
+                        $buttonUrl = base_url('exam/start/' . $exam['id']);
+                        $buttonClass = 'success';
+                    }
+                } else {
+                    $buttonType = 'start';
+                    $buttonLabel = 'Mulai Ujian';
+                    $buttonIcon = 'bi-play-circle';
+                    $buttonUrl = base_url('exam/start/' . $exam['id']);
+                    $buttonClass = 'success';
+                }
+            }
+            
+            $formattedExams[] = [
+                'id' => $exam['id'],
+                'title' => $exam['title'],
+                'description' => $exam['description'],
+                'duration_minutes' => $exam['duration_minutes'],
+                'total_questions' => $exam['total_questions'],
+                'registered' => $registered,
+                'button_type' => $buttonType,
+                'button_label' => $buttonLabel,
+                'button_icon' => $buttonIcon,
+                'button_url' => $buttonUrl,
+                'button_class' => $buttonClass,
+                'score' => $score,
+                'header_type' => $registered ? 'success' : 'primary',
+            ];
+        }
+        
+        return $this->response->setJSON([
+            'success' => true,
+            'exams' => $formattedExams,
+            'csrf_token' => csrf_hash()
         ]);
     }
     
@@ -59,102 +160,131 @@ class Exam extends BaseController
                 'exam_id' => $examId
             ]);
             
-            return redirect()->to('/exam')->with('success', 'Registered successfully');
+            return redirect()->to('/exam')->with('success', 'Berhasil mendaftar ujian');
         }
         
-        return redirect()->to('/exam')->with('error', 'Already registered');
+        return redirect()->to('/exam')->with('error', 'Anda sudah terdaftar');
     }
     
     public function start($examId)
     {
-    $userId = session()->get('user_id');
-    $exam = $this->examModel->find($examId);
-    
-    if (!$exam || $exam['status'] !== 'published') {
-        return redirect()->to('/exam')->with('error', 'Ujian tidak tersedia');
-    }
-    
-    // Cek registrasi
-    $registration = $this->registrationModel
-        ->where('user_id', $userId)
-        ->where('exam_id', $examId)
-        ->first();
-    
-    if (!$registration) {
-        return redirect()->to('/exam')->with('error', 'Silakan daftar dulu');
-    }
-    
-    // Cek apakah sudah ada sesi yang ongoing
-    $session = $this->sessionModel
-        ->where('user_id', $userId)
-        ->where('exam_id', $examId)
-        ->where('status', 'ongoing')
-        ->first();
-    
-    if (!$session) {
-        // Hitung waktu mulai dan selesai
-        $startTime = date('Y-m-d H:i:s');
+        $userId = session()->get('user_id');
+        $exam = $this->examModel->find($examId);
         
-        // PENTING: Tambahkan durasi dengan BENAR
-        $durationMinutes = (int)$exam['duration_minutes'];
-        $endTime = date('Y-m-d H:i:s', strtotime("+{$durationMinutes} minutes"));
-        
-        // Debug: cek nilai
-        log_message('debug', 'Start Time: ' . $startTime);
-        log_message('debug', 'Duration: ' . $durationMinutes . ' minutes');
-        log_message('debug', 'End Time: ' . $endTime);
-        
-        // Simpan sesi baru
-        $sessionData = [
-            'user_id' => $userId,
-            'exam_id' => $examId,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'status' => 'ongoing'
-        ];
-        
-        $sessionId = $this->sessionModel->insert($sessionData);
-        
-        // Verifikasi insert berhasil
-        if (!$sessionId) {
-            return redirect()->to('/exam')->with('error', 'Gagal membuat sesi ujian');
+        if (!$exam || $exam['status'] !== 'published') {
+            return redirect()->to('/exam')->with('error', 'Exam not available');
         }
-    } else {
-        $sessionId = $session['id'];
-    }
-    
-    // Ambil soal pertama
-    $firstQuestion = $this->questionModel
-        ->where('exam_id', $examId)
-        ->orderBy('order', 'ASC')
-        ->first();
-    
-    if (!$firstQuestion) {
-        return redirect()->to('/exam')->with('error', 'Belum ada soal dalam ujian ini');
-    }
-    
-    return redirect()->to('/exam/take/' . $sessionId . '/question/' . $firstQuestion['id']);
+        
+        $registration = $this->registrationModel
+            ->where('user_id', $userId)
+            ->where('exam_id', $examId)
+            ->first();
+        
+        if (!$registration) {
+            return redirect()->to('/exam')->with('error', 'Please register first');
+        }
+        
+        $allSessions = $this->sessionModel
+            ->where('user_id', $userId)
+            ->where('exam_id', $examId)
+            ->whereIn('status', ['ongoing', 'finished', 'expired'])
+            ->findAll();
+        
+        $validSession = null;
+        foreach ($allSessions as $session) {
+            if ($session['status'] === 'ongoing' && strtotime($session['end_time']) > time()) {
+                $validSession = $session;
+                break;
+            }
+        }
+        
+        foreach ($allSessions as $session) {
+            if ($session['status'] === 'ongoing' && strtotime($session['end_time']) <= time()) {
+                $this->sessionModel->update($session['id'], ['status' => 'expired']);
+            }
+        }
+        
+        if ($validSession) {
+            $sessionId = $validSession['id'];
+        } else {
+            $startTime = date('Y-m-d H:i:s');
+            $endTime = date('Y-m-d H:i:s', strtotime('+' . $exam['duration_minutes'] . ' minutes'));
+            
+            $sessionId = $this->sessionModel->insert([
+                'user_id' => $userId,
+                'exam_id' => $examId,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'status' => 'ongoing'
+            ]);
+        }
+        
+        $firstQuestion = $this->questionModel
+            ->where('exam_id', $examId)
+            ->orderBy('order', 'ASC')
+            ->first();
+        
+        if (!$firstQuestion) {
+            return redirect()->to('/exam')->with('error', 'No questions available');
+        }
+        
+        return redirect()->to('/exam/take/' . $sessionId . '/question/' . $firstQuestion['id']);
     }
     
     public function takeExam($sessionId, $questionId = null)
     {
         $session = $this->sessionModel->find($sessionId);
-        if (!$session || $session['status'] !== 'ongoing') {
-            return redirect()->to('/exam')->with('error', 'Session not available');
+        
+        if (!$session) {
+            return redirect()->to('/exam')->with('error', 'Sesi tidak ditemukan');
+        }
+        
+        if ($session['status'] !== 'ongoing') {
+            return redirect()->to('/exam')->with('error', 'Ujian sudah selesai');
         }
         
         if ($session['user_id'] !== session()->get('user_id')) {
-            return redirect()->to('/exam')->with('error', 'Unauthorized access');
+            return redirect()->to('/exam')->with('error', 'Akses tidak sah');
+        }
+        
+        if (!empty($session['end_time'])) {
+            $endTime = strtotime($session['end_time']);
+            $now = time();
+            
+            if ($endTime <= $now) {
+                $this->sessionModel->update($sessionId, [
+                    'status' => 'finished',
+                    'total_time_taken' => 0
+                ]);
+                
+                return redirect()->to('/exam/review/' . $sessionId)->with('warning', 'Waktu ujian telah habis');
+            }
+        } else {
+            $exam = $this->examModel->find($session['exam_id']);
+            $durationMinutes = (int)$exam['duration_minutes'];
+            
+            if ($durationMinutes <= 0) {
+                $durationMinutes = 60;
+            }
+            
+            $newEndTime = date('Y-m-d H:i:s', strtotime("+{$durationMinutes} minutes"));
+            $this->sessionModel->update($sessionId, ['end_time' => $newEndTime]);
+            $session['end_time'] = $newEndTime;
         }
         
         $exam = $this->examModel->find($session['exam_id']);
+        
+        if (!$exam) {
+            return redirect()->to('/exam')->with('error', 'Data ujian tidak ditemukan');
+        }
+        
         $questions = $this->questionModel
             ->where('exam_id', $session['exam_id'])
             ->orderBy('order', 'ASC')
             ->findAll();
         
         if (empty($questions)) {
-            return redirect()->to('/exam')->with('error', 'No questions available');
+            return redirect()->to('/exam')->with('error', 'Ujian ini belum memiliki soal');
         }
         
         if (!$questionId) {
@@ -201,9 +331,10 @@ class Exam extends BaseController
             'navigation' => $navigation,
             'answersMap' => $answersMap,
             'csrf_token' => csrf_hash(),
-            'csrf_name' => csrf_token()
+            'csrf_name' => csrf_token(),
+            'endTimestamp' => strtotime($session['end_time']) * 1000,
         ];
-        
+
         return view('user/take_exam', $data);
     }
     
@@ -216,6 +347,7 @@ class Exam extends BaseController
         $sessionId = $this->request->getPost('session_id');
         $questionId = $this->request->getPost('question_id');
         $answer = $this->request->getPost('answer');
+        $isDoubtful = $this->request->getPost('is_doubtful') ? 1 : 0;
         
         $session = $this->sessionModel->find($sessionId);
         if (!$session || $session['status'] !== 'ongoing' || $session['user_id'] !== session()->get('user_id')) {
@@ -231,21 +363,26 @@ class Exam extends BaseController
             ->where('question_id', $questionId)
             ->first();
         
+        $data = [
+            'selected_answer' => $answer,
+            'is_doubtful' => $isDoubtful
+        ];
+        
         if ($existingAnswer) {
-            $this->answerModel->update($existingAnswer['id'], [
-                'selected_answer' => $answer
-            ]);
+            $this->answerModel->update($existingAnswer['id'], $data);
         } else {
-            $this->answerModel->insert([
-                'session_id' => $sessionId,
-                'question_id' => $questionId,
-                'selected_answer' => $answer
-            ]);
+            $data['session_id'] = $sessionId;
+            $data['question_id'] = $questionId;
+            $this->answerModel->insert($data);
         }
         
-        return $this->response->setJSON(['success' => true, 'message' => 'Answer saved']);
+        return $this->response->setJSON([
+            'success' => true, 
+            'message' => 'Answer saved',
+            'csrf_token' => csrf_hash()
+        ]);
     }
-    
+
     public function getServerTime()
     {
         if (!$this->request->isAJAX()) {
@@ -262,10 +399,11 @@ class Exam extends BaseController
         return $this->response->setJSON([
             'success' => true,
             'server_time' => date('Y-m-d H:i:s'),
-            'end_time' => $session['end_time']
+            'end_time' => $session['end_time'],
+            'csrf_token' => csrf_hash()
         ]);
     }
-    
+        
     public function finishExam($sessionId)
     {
         $session = $this->sessionModel->find($sessionId);
@@ -286,100 +424,104 @@ class Exam extends BaseController
         return redirect()->to('/exam/review/' . $sessionId);
     }
     
+    // ✅ METHOD REVIEW DENGAN PERHITUNGAN SKOR & GRADE
     public function review($sessionId)
-{
-    $session = $this->sessionModel->find($sessionId);
-    
-    if (!$session || $session['user_id'] !== session()->get('user_id')) {
-        return redirect()->to('/exam')->with('error', 'Invalid session');
-    }
-    
-    $exam = $this->examModel->find($session['exam_id']);
-    $questions = $this->questionModel
-        ->where('exam_id', $session['exam_id'])
-        ->orderBy('order', 'ASC')
-        ->findAll();
-    
-    $answers = $this->answerModel
-        ->where('session_id', $sessionId)
-        ->findAll();
-    
-    $answersMap = [];
-    foreach ($answers as $answer) {
-        $answersMap[$answer['question_id']] = $answer['selected_answer'];
-    }
-    
-    // ✅ HITUNG SKOR
-    $totalQuestions = count($questions);
-    $correctCount = 0;
-    $wrongCount = 0;
-    $emptyCount = 0;
-    $doubtfulCount = 0;
-    $questionResults = [];
-    
-    foreach ($questions as $question) {
-        $result = [];
-        $result['question'] = $question;
+    {
+        $session = $this->sessionModel->find($sessionId);
         
-        $answerData = $answersMap[$question['id']] ?? null;
-        $userAnswer = $answerData['selected_answer'] ?? null;
-        $isDoubtful = $answerData['is_doubtful'] ?? 0;
-        $correctAnswer = $question['correct_answer'];
-        
-        $result['user_answer'] = $userAnswer;
-        $result['correct_answer'] = $correctAnswer;
-        $result['is_doubtful'] = $isDoubtful;
-        
-        if ($userAnswer === null || $userAnswer === '') {
-            $emptyCount++;
-            $result['status'] = 'empty';
-        } elseif ($isDoubtful) {
-            $doubtfulCount++;
-            if ($userAnswer === $correctAnswer) {
-                $correctCount++;
-                $result['status'] = 'doubtful_correct';
-            } else {
-                $wrongCount++;
-                $result['status'] = 'doubtful_wrong';
-            }
-        } elseif ($userAnswer === $correctAnswer) {
-            $correctCount++;
-            $result['status'] = 'correct';
-        } else {
-            $wrongCount++;
-            $result['status'] = 'wrong';
+        if (!$session || $session['user_id'] !== session()->get('user_id')) {
+            return redirect()->to('/exam')->with('error', 'Invalid session');
         }
         
-        $questionResults[] = $result;
+        $exam = $this->examModel->find($session['exam_id']);
+        $questions = $this->questionModel
+            ->where('exam_id', $session['exam_id'])
+            ->orderBy('order', 'ASC')
+            ->findAll();
+        
+        $answers = $this->answerModel
+            ->where('session_id', $sessionId)
+            ->findAll();
+        
+        $answersMap = [];
+        foreach ($answers as $answer) {
+            $answersMap[$answer['question_id']] = [
+                'selected_answer' => $answer['selected_answer'],
+                'is_doubtful' => $answer['is_doubtful'] ?? 0
+            ];
+        }
+        
+        // ✅ HITUNG SKOR
+        $totalQuestions = count($questions);
+        $correctCount = 0;
+        $wrongCount = 0;
+        $emptyCount = 0;
+        $doubtfulCount = 0;
+        $questionResults = [];
+        
+        foreach ($questions as $question) {
+            $result = [];
+            $result['question'] = $question;
+            
+            $answerData = $answersMap[$question['id']] ?? null;
+            $userAnswer = $answerData['selected_answer'] ?? null;
+            $isDoubtful = $answerData['is_doubtful'] ?? 0;
+            $correctAnswer = $question['correct_answer'];
+            
+            $result['user_answer'] = $userAnswer;
+            $result['correct_answer'] = $correctAnswer;
+            $result['is_doubtful'] = $isDoubtful;
+            
+            if ($userAnswer === null || $userAnswer === '') {
+                $emptyCount++;
+                $result['status'] = 'empty';
+            } elseif ($isDoubtful) {
+                $doubtfulCount++;
+                if ($userAnswer === $correctAnswer) {
+                    $correctCount++;
+                    $result['status'] = 'doubtful_correct';
+                } else {
+                    $wrongCount++;
+                    $result['status'] = 'doubtful_wrong';
+                }
+            } elseif ($userAnswer === $correctAnswer) {
+                $correctCount++;
+                $result['status'] = 'correct';
+            } else {
+                $wrongCount++;
+                $result['status'] = 'wrong';
+            }
+            
+            $questionResults[] = $result;
+        }
+        
+        // ✅ HITUNG NILAI (0-100)
+        $score = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100, 2) : 0;
+        
+        // ✅ TENTUKAN GRADE
+        $grade = 'E';
+        if ($score >= 90) $grade = 'A';
+        elseif ($score >= 80) $grade = 'B';
+        elseif ($score >= 70) $grade = 'C';
+        elseif ($score >= 60) $grade = 'D';
+        
+        // ✅ KIRIM SEMUA DATA KE VIEW
+        $data = [
+            'title' => 'Review: ' . $exam['title'],
+            'exam' => $exam,
+            'session' => $session,
+            'questions' => $questions,
+            'answersMap' => $answersMap,
+            'questionResults' => $questionResults,
+            'totalQuestions' => $totalQuestions,
+            'correctCount' => $correctCount,
+            'wrongCount' => $wrongCount,
+            'emptyCount' => $emptyCount,
+            'doubtfulCount' => $doubtfulCount,
+            'score' => $score,      // ✅ Variabel ini yang menyebabkan error sebelumnya
+            'grade' => $grade       // ✅ Variabel ini yang menyebabkan error sebelumnya
+        ];
+        
+        return view('user/review', $data);
     }
-    
-    // ✅ HITUNG NILAI (0-100)
-    $score = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100, 2) : 0;
-    
-    // ✅ TENTUKAN GRADE
-    $grade = 'E';
-    if ($score >= 90) $grade = 'A';
-    elseif ($score >= 80) $grade = 'B';
-    elseif ($score >= 70) $grade = 'C';
-    elseif ($score >= 60) $grade = 'D';
-    
-    // ✅ KIRIM SEMUA DATA KE VIEW
-    $data = [
-        'title' => 'Review: ' . $exam['title'],
-        'exam' => $exam,
-        'session' => $session,
-        'questions' => $questions,
-        'answersMap' => $answersMap,
-        'questionResults' => $questionResults,
-        'totalQuestions' => $totalQuestions,
-        'correctCount' => $correctCount,
-        'wrongCount' => $wrongCount,
-        'emptyCount' => $emptyCount,
-        'doubtfulCount' => $doubtfulCount,
-        'score' => $score,      // ✅ PASTIKAN ADA
-        'grade' => $grade       // ✅ PASTIKAN ADA
-    ];
-    
-    return view('user/review', $data);
-}
 }

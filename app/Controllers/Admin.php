@@ -75,7 +75,6 @@ class Admin extends BaseController
         return view('admin/dashboard', $data);
     }
     
-    // ✅ METHOD BARU: AJAX endpoint untuk real-time dashboard
     public function getDashboardData()
     {
         if (!$this->request->isAJAX()) {
@@ -117,7 +116,6 @@ class Admin extends BaseController
             'expired' => count(array_filter($examSessions, fn($s) => $s['status'] === 'expired')),
         ];
         
-        // Format data untuk JSON
         $formattedSessions = [];
         foreach ($examSessions as $session) {
             $statusClass = 'secondary';
@@ -164,7 +162,6 @@ class Admin extends BaseController
         ]);
     }
     
-    // ✅ METHOD BARU: AJAX endpoint untuk real-time extra time
     public function getExtraTimeData()
     {
         if (!$this->request->isAJAX()) {
@@ -234,7 +231,7 @@ class Admin extends BaseController
                 if ($status === 'published') {
                     $this->examModel->update($newExamId, ['status' => 'draft']);
                     return redirect()->to('/admin/exams/' . $newExamId . '/questions/add')
-                        ->with('warning', '⚠️ Ujian dibuat sebagai Draft. Tambahkan minimal 1 soal sebelum publish.');
+                        ->with('warning', 'Ujian dibuat sebagai Draft. Tambahkan minimal 1 soal sebelum publish.');
                 }
                 
                 return redirect()->to('/admin/exams')->with('success', 'Ujian berhasil dibuat sebagai Draft!');
@@ -255,12 +252,12 @@ class Admin extends BaseController
         
         if ($questionCount < 1) {
             return redirect()->to('/admin/exams/' . $examId . '/questions')
-                ->with('error', '❌ Tidak bisa publish! Tambahkan minimal 1 soal terlebih dahulu.');
+                ->with('error', 'Tidak bisa publish! Tambahkan minimal 1 soal terlebih dahulu.');
         }
         
         $this->examModel->update($examId, ['status' => 'published']);
         
-        return redirect()->to('/admin/exams')->with('success', '✅ Ujian berhasil dipublish!');
+        return redirect()->to('/admin/exams')->with('success', 'Ujian berhasil dipublish!');
     }
     
     public function unpublishExam($examId)
@@ -346,7 +343,7 @@ class Admin extends BaseController
                 
                 $message = 'Soal berhasil ditambahkan!';
                 if ($totalQuestions === 1) {
-                    $message .= ' 🎉 Sekarang Anda bisa publish ujian ini.';
+                    $message .= ' Sekarang Anda bisa publish ujian ini.';
                 }
                 
                 return redirect()->to('/admin/exams/' . $examId . '/questions')->with('success', $message);
@@ -366,14 +363,32 @@ class Admin extends BaseController
     {
         if ($this->request->getMethod() === 'POST') {
             $sessionId = $this->request->getPost('session_id');
-            $extraMinutes = $this->request->getPost('extra_minutes');
+            $extraMinutes = (int)$this->request->getPost('extra_minutes');
             
             $session = $this->examSessionModel->find($sessionId);
+            
             if ($session && $session['status'] === 'ongoing') {
                 $newEndTime = date('Y-m-d H:i:s', strtotime($session['end_time'] . ' +' . $extraMinutes . ' minutes'));
                 $this->examSessionModel->update($sessionId, ['end_time' => $newEndTime]);
                 
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON([
+                        'success' => true,
+                        'message' => "Berhasil menambah {$extraMinutes} menit",
+                        'new_end_time' => $newEndTime,
+                        'csrf_token' => csrf_hash()
+                    ]);
+                }
+                
                 return redirect()->back()->with('success', "Berhasil menambah {$extraMinutes} menit");
+            }
+            
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Sesi tidak ditemukan atau sudah selesai',
+                    'csrf_token' => csrf_hash()
+                ]);
             }
             
             return redirect()->back()->with('error', 'Sesi tidak ditemukan atau sudah selesai');

@@ -9,10 +9,7 @@
         </h2>
         <p class="text-muted mb-0">Pantau aktivitas ujian dan pengguna secara real-time</p>
     </div>
-    <div class="d-flex align-items-center bg-white px-3 py-2 rounded-3 shadow-sm">
-        <span class="live-indicator me-2"></span>
-        <small class="text-muted fw-semibold" id="lastUpdate">Memuat data...</small>
-    </div>
+    
 </div>
 
 <!-- 1. Summary Stats Cards -->

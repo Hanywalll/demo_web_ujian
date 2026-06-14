@@ -3,7 +3,6 @@
 <?= $this->section('content') ?>
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <!-- Breadcrumb / Back Link -->
         <div class="mb-4">
             <a href="<?= base_url('admin/exams') ?>" class="text-decoration-none text-muted d-inline-flex align-items-center">
                 <i class="bi bi-arrow-left me-2"></i> Kembali ke Daftar Ujian
@@ -11,7 +10,6 @@
         </div>
 
         <div class="card border-0 shadow-sm">
-            <!-- Modern Header -->
             <div class="card-header border-0">
                 <div class="d-flex align-items-center">
                     <div class="header-icon-wrapper me-3">
@@ -28,7 +26,6 @@
                 <form action="<?= base_url('admin/exams/create') ?>" method="POST" id="createExamForm">
                     <?= csrf_field() ?>
                     
-                    <!-- Exam Title -->
                     <div class="mb-4">
                         <label for="title" class="form-label fw-bold">
                             <i class="bi bi-journal-text me-1 text-primary"></i> Exam Title <span class="text-danger">*</span>
@@ -41,7 +38,6 @@
                         <div class="form-text">Berikan nama yang jelas dan mudah dikenali oleh siswa.</div>
                     </div>
                     
-                    <!-- Description -->
                     <div class="mb-4">
                         <label for="description" class="form-label fw-bold">
                             <i class="bi bi-card-text me-1 text-primary"></i> Description <span class="text-danger">*</span>
@@ -51,7 +47,6 @@
                     </div>
                     
                     <div class="row">
-                        <!-- Duration -->
                         <div class="col-md-6 mb-4">
                             <label for="duration_minutes" class="form-label fw-bold">
                                 <i class="bi bi-clock me-1 text-primary"></i> Duration <span class="text-danger">*</span>
@@ -65,7 +60,6 @@
                             <div class="form-text">Waktu pengerjaan dalam menit (1 - 300).</div>
                         </div>
                         
-                        <!-- Status -->
                         <div class="col-md-6 mb-4">
                             <label for="status" class="form-label fw-bold">
                                 <i class="bi bi-toggle-on me-1 text-primary"></i> Status
@@ -81,7 +75,6 @@
                         </div>
                     </div>
 
-                    <!-- Info Alert -->
                     <div class="alert alert-primary d-flex align-items-center mb-4" role="alert">
                         <i class="bi bi-info-circle-fill me-2 fs-5"></i>
                         <div>
@@ -89,7 +82,6 @@
                         </div>
                     </div>
                     
-                    <!-- Action Buttons -->
                     <div class="d-flex gap-3 flex-wrap">
                         <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
                             <i class="bi bi-save me-2"></i> Create Exam
@@ -105,7 +97,6 @@
 </div>
 
 <style>
-    /* Header Styling */
     .card-header {
         background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
         padding: 2rem;
@@ -125,7 +116,6 @@
         backdrop-filter: blur(5px);
     }
 
-    /* Form Enhancements */
     .form-label {
         font-size: 0.95rem;
         margin-bottom: 0.5rem;
@@ -160,7 +150,6 @@
         margin-top: 0.4rem;
     }
 
-    /* Alert Styling */
     .alert-primary {
         background: linear-gradient(135deg, rgba(30, 149, 224, 0.1) 0%, rgba(90, 179, 247, 0.1) 100%);
         border: 1px solid rgba(30, 149, 224, 0.2);
@@ -168,7 +157,6 @@
         border-radius: 12px;
     }
 
-    /* Buttons */
     .btn-outline-secondary {
         border: 2px solid var(--gray-200);
         color: var(--gray-600);

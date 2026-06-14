@@ -56,7 +56,6 @@ class Exam extends BaseController
         ]);
     }
     
-    // ✅ Endpoint untuk Real-time User Exams
     public function getExamsData()
     {
         if (!$this->request->isAJAX()) {
@@ -424,7 +423,6 @@ class Exam extends BaseController
         return redirect()->to('/exam/review/' . $sessionId);
     }
     
-    // ✅ METHOD REVIEW DENGAN PERHITUNGAN SKOR & GRADE
     public function review($sessionId)
     {
         $session = $this->sessionModel->find($sessionId);
@@ -451,7 +449,6 @@ class Exam extends BaseController
             ];
         }
         
-        // ✅ HITUNG SKOR
         $totalQuestions = count($questions);
         $correctCount = 0;
         $wrongCount = 0;
@@ -495,17 +492,14 @@ class Exam extends BaseController
             $questionResults[] = $result;
         }
         
-        // ✅ HITUNG NILAI (0-100)
         $score = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100, 2) : 0;
         
-        // ✅ TENTUKAN GRADE
         $grade = 'E';
         if ($score >= 90) $grade = 'A';
         elseif ($score >= 80) $grade = 'B';
         elseif ($score >= 70) $grade = 'C';
         elseif ($score >= 60) $grade = 'D';
         
-        // ✅ KIRIM SEMUA DATA KE VIEW
         $data = [
             'title' => 'Review: ' . $exam['title'],
             'exam' => $exam,
@@ -518,8 +512,8 @@ class Exam extends BaseController
             'wrongCount' => $wrongCount,
             'emptyCount' => $emptyCount,
             'doubtfulCount' => $doubtfulCount,
-            'score' => $score,      // ✅ Variabel ini yang menyebabkan error sebelumnya
-            'grade' => $grade       // ✅ Variabel ini yang menyebabkan error sebelumnya
+            'score' => $score,
+            'grade' => $grade
         ];
         
         return view('user/review', $data);

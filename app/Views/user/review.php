@@ -80,12 +80,23 @@
         <h2 class="mb-1 fw-bold text-dark">
             <i class="bi bi-clipboard-check me-2 text-primary"></i>Hasil Ujian
         </h2>
-        <p class="text-muted mb-0"><?= esc($exam['title']) ?></p>
+        <p class="text-muted mb-0"><?= esc($exam['title'] ?? 'Ujian') ?></p>
     </div>
     <a href="<?= base_url('exam') ?>" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-2"></i>Kembali ke Daftar Ujian
     </a>
 </div>
+
+<!-- ✅ FALLBACK: Pastikan variabel ada -->
+<?php 
+$score = $score ?? 0;
+$grade = $grade ?? 'E';
+$totalQuestions = $totalQuestions ?? 0;
+$correctCount = $correctCount ?? 0;
+$wrongCount = $wrongCount ?? 0;
+$emptyCount = $emptyCount ?? 0;
+$doubtfulCount = $doubtfulCount ?? 0;
+?>
 
 <!-- Top Section: Score & Stats -->
 <div class="row g-4 mb-4">
@@ -183,7 +194,7 @@
                 $statusClass = 'q-status-empty'; $badgeClass = 'secondary'; $statusText = 'Tidak Dijawab'; $icon = 'dash-circle-fill';
                 if ($result['status'] === 'correct') { $statusClass = 'q-status-correct'; $badgeClass = 'success'; $statusText = 'Benar'; $icon = 'check-circle-fill'; }
                 elseif ($result['status'] === 'wrong') { $statusClass = 'q-status-wrong'; $badgeClass = 'danger'; $statusText = 'Salah'; $icon = 'x-circle-fill'; }
-                elseif (strpos($result['status'], 'doubtful') !== false) { $statusClass = 'q-status-doubtful'; $badgeClass = 'warning'; $statusText = 'Ragu-ragu'; $icon = 'flag-fill'; }
+                elseif (strpos($result['status'] ?? '', 'doubtful') !== false) { $statusClass = 'q-status-doubtful'; $badgeClass = 'warning'; $statusText = 'Ragu-ragu'; $icon = 'flag-fill'; }
             ?>
             <div class="question-review-card card <?= $statusClass ?>">
                 <div class="card-body p-4">
@@ -238,7 +249,6 @@
 
 <?= $this->section('scripts') ?>
 <script>
-    // Pastikan MathJax merender ulang rumus di halaman review jika ada
     document.addEventListener('DOMContentLoaded', function() {
         if (window.MathJax) {
             MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));

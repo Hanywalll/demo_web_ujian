@@ -49,6 +49,12 @@
     .stat-box-gradient-warning { background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%); }
     .stat-box-gradient-secondary { background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%); }
 
+    /* ✅ Badge Gradient untuk Status Soal (Font & Ikon Putih) */
+    .badge-gradient-success { background: linear-gradient(135deg, #059669 0%, #10B981 100%); }
+    .badge-gradient-danger { background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%); }
+    .badge-gradient-warning { background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%); }
+    .badge-gradient-secondary { background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%); }
+
     /* Question Review Cards */
     .question-review-card {
         border: none;
@@ -72,6 +78,12 @@
     .option-item:hover { background-color: var(--gray-50); }
     .option-correct { background-color: #D1FAE5 !important; border-color: #10B981 !important; color: #065F46; }
     .option-wrong { background-color: #FEE2E2 !important; border-color: #EF4444 !important; color: #991B1B; }
+
+    /* ✅ Header Card Gradient */
+    .header-gradient-primary {
+        background: linear-gradient(135deg, #3264B9 0%, #1E95E0 100%) !important;
+        border-radius: 12px 12px 0 0 !important;
+    }
 </style>
 
 <!-- Header -->
@@ -174,8 +186,9 @@ $doubtfulCount = $doubtfulCount ?? 0;
 
 <!-- Bottom Section: Question Details -->
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-0 pt-4 px-4">
-        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-text me-2 text-primary"></i>Tinjauan Detail Jawaban</h5>
+    <!-- ✅ Header dengan Gradient Biru & Teks Putih -->
+    <div class="card-header header-gradient-primary border-0 pt-4 px-4">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-journal-text me-2"></i>Tinjauan Detail Jawaban</h5>
     </div>
     <div class="card-body p-4">
         <?php if (empty($questionResults)): ?>
@@ -191,10 +204,11 @@ $doubtfulCount = $doubtfulCount ?? 0;
                 $options = json_decode($q['options'] ?? '[]', true);
                 if (!is_array($options)) $options = [];
                 
-                $statusClass = 'q-status-empty'; $badgeClass = 'secondary'; $statusText = 'Tidak Dijawab'; $icon = 'dash-circle-fill';
-                if ($result['status'] === 'correct') { $statusClass = 'q-status-correct'; $badgeClass = 'success'; $statusText = 'Benar'; $icon = 'check-circle-fill'; }
-                elseif ($result['status'] === 'wrong') { $statusClass = 'q-status-wrong'; $badgeClass = 'danger'; $statusText = 'Salah'; $icon = 'x-circle-fill'; }
-                elseif (strpos($result['status'] ?? '', 'doubtful') !== false) { $statusClass = 'q-status-doubtful'; $badgeClass = 'warning'; $statusText = 'Ragu-ragu'; $icon = 'flag-fill'; }
+                // ✅ Menggunakan badge gradient dengan teks putih
+                $statusClass = 'q-status-empty'; $badgeClass = 'badge-gradient-secondary'; $statusText = 'Tidak Dijawab'; $icon = 'dash-circle-fill';
+                if ($result['status'] === 'correct') { $statusClass = 'q-status-correct'; $badgeClass = 'badge-gradient-success'; $statusText = 'Benar'; $icon = 'check-circle-fill'; }
+                elseif ($result['status'] === 'wrong') { $statusClass = 'q-status-wrong'; $badgeClass = 'badge-gradient-danger'; $statusText = 'Salah'; $icon = 'x-circle-fill'; }
+                elseif (strpos($result['status'] ?? '', 'doubtful') !== false) { $statusClass = 'q-status-doubtful'; $badgeClass = 'badge-gradient-warning'; $statusText = 'Ragu-ragu'; $icon = 'flag-fill'; }
             ?>
             <div class="question-review-card card <?= $statusClass ?>">
                 <div class="card-body p-4">
@@ -203,7 +217,8 @@ $doubtfulCount = $doubtfulCount ?? 0;
                             <span class="text-muted me-2">#<?= $q['order'] ?? ($index + 1) ?></span>
                             <?= $q['question_text'] ?>
                         </h5>
-                        <span class="badge bg-<?= $badgeClass ?> bg-opacity-10 text-<?= $badgeClass ?> rounded-pill px-3 py-2">
+                        <!-- ✅ Badge dengan Font & Ikon Putih -->
+                        <span class="badge <?= $badgeClass ?> text-white rounded-pill px-3 py-2">
                             <i class="bi bi-<?= $icon ?> me-1"></i> <?= $statusText ?>
                         </span>
                     </div>

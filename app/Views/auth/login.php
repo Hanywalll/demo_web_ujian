@@ -6,7 +6,7 @@
         <div class="card shadow">
             <div class="card-header bg-primary text-white text-center">
                 <h3 class="mb-0">
-                    <i class="bi bi-box-arrow-in-right"></i> Login
+                    <i class="bi bi-box-arrow-in-right"></i> Masuk
                 </h3>
             </div>
             <div class="card-body p-4">
@@ -14,20 +14,20 @@
                     <?= csrf_field() ?>
                     
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
+                        <label for="email" class="form-label">Alamat Email</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                             <input type="email" class="form-control" id="email" name="email" 
-                                   placeholder="Enter your email" value="<?= old('email') ?>" required>
+                                   placeholder="Masukkan email Anda" value="<?= old('email') ?>" required>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
+                        <label for="password" class="form-label">Kata Sandi</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-lock"></i></span>
                             <input type="password" class="form-control" id="password" name="password" 
-                                   placeholder="Enter your password" required>
+                                   placeholder="Masukkan kata sandi" required>
                             <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                 <i class="bi bi-eye"></i>
                             </button>
@@ -36,7 +36,7 @@
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right"></i> Login
+                            <i class="bi bi-box-arrow-in-right"></i> Masuk
                         </button>
                     </div>
                 </form>
@@ -44,15 +44,15 @@
                 <hr>
                 
                 <div class="text-center">
-                    <p class="mb-2">Don't have an account?</p>
+                    <p class="mb-2">Belum punya akun?</p>
                     <a href="<?= base_url('register') ?>" class="btn btn-outline-success">
-                        <i class="bi bi-person-plus"></i> Register Here
+                        <i class="bi bi-person-plus"></i> Daftar Di Sini
                     </a>
                 </div>
                 
                 <div class="mt-3 alert alert-info">
                     <small>
-                        <strong>Demo Accounts:</strong><br>
+                        <strong>Akun Demo:</strong><br>
                         <strong>Admin:</strong> admin@example.com / admin123<br>
                         <strong>User:</strong> user@example.com / user123
                     </small>

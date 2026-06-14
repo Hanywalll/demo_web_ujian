@@ -6,7 +6,7 @@
         <div class="card shadow">
             <div class="card-header bg-success text-white">
                 <h4 class="mb-0">
-                    <i class="bi bi-plus-circle"></i> Add Question to: <?= esc($exam['title']) ?>
+                    <i class="bi bi-plus-circle"></i> Tambah Soal ke: <?= esc($exam['title']) ?>
                 </h4>
             </div>
             <div class="card-body">
@@ -15,12 +15,10 @@
                     <?= csrf_field() ?>
                     
                     <div class="mb-3">
-                        <label for="question_text" class="form-label">Question Text *</label>
+                        <label for="question_text" class="form-label">Teks Soal *</label>
                         
-                        <!-- ✅ TOOLBAR MATEMATIKA -->
                         <div class="btn-toolbar mb-2" role="toolbar">
-                            <!-- Basic Math -->
-                            <div class="btn-group me-2 mb-1" role="group" aria-label="Basic Math">
+                            <div class="btn-group me-2 mb-1" role="group" aria-label="Matematika Dasar">
                                 <button type="button" class="btn btn-sm btn-outline-primary" 
                                         onclick="insertMath('fraction')" title="Pecahan">
                                     <i>ᵃ⁄ᵦ</i>
@@ -39,8 +37,7 @@
                                 </button>
                             </div>
                             
-                            <!-- Calculus -->
-                            <div class="btn-group me-2 mb-1" role="group" aria-label="Calculus">
+                            <div class="btn-group me-2 mb-1" role="group" aria-label="Kalkulus">
                                 <button type="button" class="btn btn-sm btn-outline-success" 
                                         onclick="insertMath('integral')" title="Integral">
                                     ∫
@@ -59,20 +56,18 @@
                                 </button>
                             </div>
                             
-                            <!-- Summation & Product -->
-                            <div class="btn-group me-2 mb-1" role="group" aria-label="Summation">
+                            <div class="btn-group me-2 mb-1" role="group" aria-label="Sigma dan Produk">
                                 <button type="button" class="btn btn-sm btn-outline-warning" 
-                                        onclick="insertMath('sum')" title="Sigma (Sum)">
+                                        onclick="insertMath('sum')" title="Sigma (Jumlah)">
                                     Σ
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-warning" 
-                                        onclick="insertMath('product')" title="Product">
+                                        onclick="insertMath('product')" title="Produk">
                                     Π
                                 </button>
                             </div>
                             
-                            <!-- Greek Letters -->
-                            <div class="btn-group me-2 mb-1" role="group" aria-label="Greek">
+                            <div class="btn-group me-2 mb-1" role="group" aria-label="Huruf Yunani">
                                 <button type="button" class="btn btn-sm btn-outline-info" 
                                         onclick="insertMath('alpha')" title="Alpha">α</button>
                                 <button type="button" class="btn btn-sm btn-outline-info" 
@@ -87,20 +82,19 @@
                                         onclick="insertMath('delta')" title="Delta">Δ</button>
                             </div>
                             
-                            <!-- Symbols -->
-                            <div class="btn-group me-2 mb-1" role="group" aria-label="Symbols">
+                            <div class="btn-group me-2 mb-1" role="group" aria-label="Simbol">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                        onclick="insertMath('infinity')" title="Infinity">∞</button>
+                                        onclick="insertMath('infinity')" title="Tak Hingga">∞</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" 
                                         onclick="insertMath('pm')" title="Plus Minus">±</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                        onclick="insertMath('neq')" title="Not Equal">≠</button>
+                                        onclick="insertMath('neq')" title="Tidak Sama Dengan">≠</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                        onclick="insertMath('leq')" title="Less or Equal">≤</button>
+                                        onclick="insertMath('leq')" title="Kurang Dari Sama Dengan">≤</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                        onclick="insertMath('geq')" title="Greater or Equal">≥</button>
+                                        onclick="insertMath('geq')" title="Lebih Dari Sama Dengan">≥</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                        onclick="insertMath('approx')" title="Approximately">≈</button>
+                                        onclick="insertMath('approx')" title="Sekitar">≈</button>
                             </div>
                         </div>
                         
@@ -111,29 +105,28 @@
                             Contoh: <code>$x^2 + y^2 = z^2$</code>
                         </small>
                         
-                        <!-- Preview -->
                         <div class="mt-3">
-                            <strong><i class="bi bi-eye"></i> Preview:</strong>
+                            <strong><i class="bi bi-eye"></i> Pratinjau:</strong>
                             <div id="mathPreview" class="border p-3 mt-1 bg-light" style="min-height: 60px;">
-                                <em class="text-muted">Preview akan muncul di sini...</em>
+                                <em class="text-muted">Pratinjau akan muncul di sini...</em>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="question_image" class="form-label">Question Image (Optional)</label>
+                        <label for="question_image" class="form-label">Gambar Soal (Opsional)</label>
                         <input type="file" class="form-control" id="question_image" name="question_image" 
                                accept="image/jpeg,image/png,image/jpg">
-                        <small class="text-muted">Max size: 2MB. Supported: JPG, PNG</small>
+                        <small class="text-muted">Ukuran maks: 2MB. Format: JPG, PNG</small>
                     </div>
                     
                     <hr>
-                    <h5><i class="bi bi-list-ol"></i> Options</h5>
+                    <h5><i class="bi bi-list-ol"></i> Pilihan Jawaban</h5>
                     
                     <?php foreach (range('A', 'D') as $option): ?>
                     <div class="mb-3">
                         <label for="option_<?= $option ?>" class="form-label">
-                            Option <?= $option ?> *
+                            Pilihan <?= $option ?> *
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><strong><?= $option ?></strong></span>
@@ -144,9 +137,9 @@
                     <?php endforeach; ?>
                     
                     <div class="mb-3">
-                        <label for="correct_answer" class="form-label">Correct Answer *</label>
+                        <label for="correct_answer" class="form-label">Jawaban Benar *</label>
                         <select class="form-control" id="correct_answer" name="correct_answer" required>
-                            <option value="">Select correct answer</option>
+                            <option value="">Pilih jawaban benar</option>
                             <option value="A">A</option>
                             <option value="B">B</option>
                             <option value="C">C</option>
@@ -156,11 +149,11 @@
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-success btn-lg">
-                            <i class="bi bi-save"></i> Add Question
+                            <i class="bi bi-save"></i> Simpan Soal
                         </button>
                         <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions') ?>" 
                            class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Back
+                            <i class="bi bi-arrow-left"></i> Kembali
                         </a>
                     </div>
                 </form>
@@ -172,35 +165,23 @@
 
 <?= $this->section('scripts') ?>
 <script>
-// ========================================
-// MATH TEMPLATES
-// ========================================
 var mathTemplates = {
-    // Basic Math
     'fraction': '\\frac{a}{b}',
     'sqrt': '\\sqrt{x}',
     'power': 'x^{2}',
     'subscript': 'x_{i}',
-    
-    // Calculus
     'integral': '\\int f(x) \\, dx',
     'definite_integral': '\\int_{a}^{b} f(x) \\, dx',
     'derivative': '\\frac{d}{dx} f(x)',
     'limit': '\\lim_{x \\to a} f(x)',
-    
-    // Summation & Product
     'sum': '\\sum_{i=1}^{n} x_i',
     'product': '\\prod_{i=1}^{n} x_i',
-    
-    // Greek Letters
     'alpha': '\\alpha',
     'beta': '\\beta',
     'theta': '\\theta',
     'pi': '\\pi',
     'sigma': '\\sigma',
     'delta': '\\Delta',
-    
-    // Symbols
     'infinity': '\\infty',
     'pm': '\\pm',
     'neq': '\\neq',
@@ -209,9 +190,6 @@ var mathTemplates = {
     'approx': '\\approx'
 };
 
-// ========================================
-// INSERT MATH FUNCTION
-// ========================================
 function insertMath(type) {
     var textarea = document.getElementById('question_text');
     var template = mathTemplates[type];
@@ -224,40 +202,31 @@ function insertMath(type) {
     var cursorPos = textarea.selectionStart;
     var endPos = textarea.selectionEnd;
     var text = textarea.value;
-    
-    // Insert template dengan $...$ wrapper
     var beforeCursor = text.slice(0, cursorPos);
     var afterCursor = text.slice(endPos);
     var insertion = '$' + template + '$';
     
     textarea.value = beforeCursor + insertion + afterCursor;
     
-    // Set cursor setelah inserted text
     var newCursorPos = cursorPos + insertion.length;
     textarea.setSelectionRange(newCursorPos, newCursorPos);
     textarea.focus();
     
-    // Update preview
     updatePreview();
 }
 
-// ========================================
-// PREVIEW FUNCTION
-// ========================================
 function updatePreview() {
     var textarea = document.getElementById('question_text');
     var preview = document.getElementById('mathPreview');
     var text = textarea.value;
     
     if (!text.trim()) {
-        preview.innerHTML = '<em class="text-muted">Preview akan muncul di sini...</em>';
+        preview.innerHTML = '<em class="text-muted">Pratinjau akan muncul di sini...</em>';
         return;
     }
     
-    // Escape HTML untuk keamanan, tapi biarkan $...$ untuk MathJax
     preview.innerHTML = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
-    // Render dengan MathJax
     if (window.MathJax && window.MathJax.typesetPromise) {
         MathJax.typesetPromise([preview]).catch((err) => {
             console.log('MathJax error:', err);
@@ -265,16 +234,11 @@ function updatePreview() {
     }
 }
 
-// ========================================
-// EVENT LISTENERS
-// ========================================
 document.addEventListener('DOMContentLoaded', function() {
     var textarea = document.getElementById('question_text');
     
-    // Update preview saat user mengetik
     textarea.addEventListener('input', updatePreview);
     
-    // Support Tab key untuk indent
     textarea.addEventListener('keydown', function(e) {
         if (e.key === 'Tab') {
             e.preventDefault();
@@ -285,7 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initial preview (kalau ada old input)
     if (textarea.value.trim()) {
         updatePreview();
     }

@@ -3,18 +3,18 @@
 <?= $this->section('content') ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2><i class="bi bi-list-ul"></i> Questions</h2>
-        <h5 class="text-muted">Exam: <?= esc($exam['title']) ?></h5>
+        <h2><i class="bi bi-list-ul"></i> Daftar Soal</h2>
+        <h5 class="text-muted">Ujian: <?= esc($exam['title']) ?></h5>
     </div>
     <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions/add') ?>" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Add Question
+        <i class="bi bi-plus-circle"></i> Tambah Soal
     </a>
 </div>
 
 <?php if (empty($questions)): ?>
 <div class="alert alert-info text-center">
-    <i class="bi bi-info-circle"></i> No questions added yet. 
-    <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions/add') ?>" class="alert-link">Add first question</a>
+    <i class="bi bi-info-circle"></i> Belum ada soal yang ditambahkan. 
+    <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions/add') ?>" class="alert-link">Tambah soal pertama</a>
 </div>
 <?php else: ?>
 <div class="accordion" id="questionsAccordion">
@@ -23,7 +23,7 @@
         <h2 class="accordion-header">
             <button class="accordion-button <?= $index > 0 ? 'collapsed' : '' ?>" type="button" 
                     data-bs-toggle="collapse" data-bs-target="#question<?= $question['id'] ?>">
-                <strong>Q<?= $question['order'] ?>:</strong> 
+                <strong>Soal <?= $question['order'] ?>:</strong> 
                 <?= substr(strip_tags($question['question_text']), 0, 80) ?>...
             </button>
         </h2>
@@ -44,12 +44,12 @@
                 $options = json_decode($question['options'], true);
                 ?>
                 <div class="options">
-                    <strong>Options:</strong>
+                    <strong>Pilihan Jawaban:</strong>
                     <ul class="list-group mb-3">
                         <?php foreach ($options as $key => $value): ?>
                         <li class="list-group-item <?= $key === $question['correct_answer'] ? 'list-group-item-success' : '' ?>">
                             <strong><?= $key ?>.</strong> <?= $value ?>
-                            <?= $key === $question['correct_answer'] ? '<span class="badge bg-success float-end">Correct Answer</span>' : '' ?>
+                            <?= $key === $question['correct_answer'] ? '<span class="badge bg-success float-end">Jawaban Benar</span>' : '' ?>
                         </li>
                         <?php endforeach; ?>
                     </ul>
@@ -62,6 +62,6 @@
 <?php endif; ?>
 
 <a href="<?= base_url('admin/exams') ?>" class="btn btn-secondary mt-3">
-    <i class="bi bi-arrow-left"></i> Back to Exams
+    <i class="bi bi-arrow-left"></i> Kembali ke Daftar Ujian
 </a>
 <?= $this->endSection() ?>

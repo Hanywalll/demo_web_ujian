@@ -4,17 +4,16 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
         <h2 class="mb-1">
-            <i class="bi bi-journal-text me-2"></i>Manage Exams
+            <i class="bi bi-journal-text me-2"></i>Kelola Ujian
         </h2>
         <p class="text-muted mb-0">Kelola semua ujian yang tersedia di sistem</p>
     </div>
     <a href="<?= base_url('admin/exams/create') ?>" class="btn btn-primary btn-lg">
-        <i class="bi bi-plus-circle me-2"></i>Create New Exam
+        <i class="bi bi-plus-circle me-2"></i>Buat Ujian Baru
     </a>
 </div>
 
 <?php if (empty($exams)): ?>
-<!-- Empty State -->
 <div class="card border-0 shadow-sm">
     <div class="card-body text-center py-5">
         <div class="mb-4">
@@ -23,12 +22,11 @@
         <h4 class="mb-3">Belum Ada Ujian</h4>
         <p class="text-muted mb-4">Mulai dengan membuat ujian pertama Anda</p>
         <a href="<?= base_url('admin/exams/create') ?>" class="btn btn-primary btn-lg">
-            <i class="bi bi-plus-circle me-2"></i>Create First Exam
+            <i class="bi bi-plus-circle me-2"></i>Buat Ujian Pertama
         </a>
     </div>
 </div>
 <?php else: ?>
-<!-- Stats Summary -->
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="card border-0 h-100 stat-card">
@@ -40,7 +38,7 @@
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-1">Total Exams</h6>
+                        <h6 class="text-muted mb-1">Total Ujian</h6>
                         <h3 class="mb-0 fw-bold"><?= count($exams) ?></h3>
                     </div>
                 </div>
@@ -57,7 +55,7 @@
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-1">Published</h6>
+                        <h6 class="text-muted mb-1">Diterbitkan</h6>
                         <h3 class="mb-0 fw-bold"><?= count(array_filter($exams, fn($e) => $e['status'] === 'published')) ?></h3>
                     </div>
                 </div>
@@ -74,7 +72,7 @@
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-1">Draft</h6>
+                        <h6 class="text-muted mb-1">Draf</h6>
                         <h3 class="mb-0 fw-bold"><?= count(array_filter($exams, fn($e) => $e['status'] === 'draft')) ?></h3>
                     </div>
                 </div>
@@ -83,7 +81,6 @@
     </div>
 </div>
 
-<!-- Exams Grid -->
 <div class="row">
     <?php foreach ($exams as $exam): ?>
     <div class="col-lg-6 mb-4">
@@ -96,11 +93,11 @@
                 <div>
                     <?php if ($exam['status'] === 'published'): ?>
                         <span class="badge bg-light text-success">
-                            <i class="bi bi-cloud-check me-1"></i>Published
+                            <i class="bi bi-cloud-check me-1"></i>Diterbitkan
                         </span>
                     <?php else: ?>
                         <span class="badge bg-light text-warning">
-                            <i class="bi bi-file-earmark me-1"></i>Draft
+                            <i class="bi bi-file-earmark me-1"></i>Draf
                         </span>
                     <?php endif; ?>
                 </div>
@@ -114,8 +111,8 @@
                         <div class="info-item">
                             <i class="bi bi-clock text-primary"></i>
                             <div>
-                                <small class="text-muted d-block">Duration</small>
-                                <strong><?= $exam['duration_minutes'] ?> mins</strong>
+                                <small class="text-muted d-block">Durasi</small>
+                                <strong><?= $exam['duration_minutes'] ?> menit</strong>
                             </div>
                         </div>
                     </div>
@@ -123,8 +120,8 @@
                         <div class="info-item">
                             <i class="bi bi-question-circle text-primary"></i>
                             <div>
-                                <small class="text-muted d-block">Questions</small>
-                                <strong><?= $exam['total_questions'] ?> items</strong>
+                                <small class="text-muted d-block">Jumlah Soal</small>
+                                <strong><?= $exam['total_questions'] ?> soal</strong>
                             </div>
                         </div>
                     </div>
@@ -132,7 +129,7 @@
                         <div class="info-item">
                             <i class="bi bi-calendar text-primary"></i>
                             <div>
-                                <small class="text-muted d-block">Created</small>
+                                <small class="text-muted d-block">Dibuat</small>
                                 <strong><?= date('d M Y', strtotime($exam['created_at'])) ?></strong>
                             </div>
                         </div>
@@ -145,29 +142,29 @@
                     <?php if ($exam['status'] === 'draft'): ?>
                         <a href="<?= base_url('admin/exams/' . $exam['id'] . '/publish') ?>" 
                            class="btn btn-success btn-sm flex-grow-1" 
-                           onclick="return confirm('Publish ujian ini? User akan bisa mengakses ujian ini.')"
-                           title="Publish Ujian">
-                            <i class="bi bi-cloud-upload me-1"></i> Publish
+                           onclick="return confirm('Terbitkan ujian ini? Peserta akan bisa mengakses ujian ini.')"
+                           title="Terbitkan Ujian">
+                            <i class="bi bi-cloud-upload me-1"></i> Terbitkan
                         </a>
                     <?php else: ?>
                         <a href="<?= base_url('admin/exams/' . $exam['id'] . '/unpublish') ?>" 
                            class="btn btn-warning btn-sm flex-grow-1" 
-                           onclick="return confirm('Unpublish ujian ini? User tidak bisa akses lagi.')"
-                           title="Unpublish Ujian">
-                            <i class="bi bi-cloud-slash me-1"></i> Unpublish
+                           onclick="return confirm('Batalkan terbit ujian ini? Peserta tidak bisa mengakses lagi.')"
+                           title="Batalkan Terbit Ujian">
+                            <i class="bi bi-cloud-slash me-1"></i> Batalkan Terbit
                         </a>
                     <?php endif; ?>
                     
                     <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions') ?>" 
                        class="btn btn-info btn-sm flex-grow-1" 
-                       title="Manage Questions">
-                        <i class="bi bi-list-ul me-1"></i> Questions
+                       title="Kelola Soal">
+                        <i class="bi bi-list-ul me-1"></i> Soal
                         <span class="badge bg-white text-info ms-1"><?= $exam['total_questions'] ?></span>
                     </a>
                     
                     <a href="<?= base_url('admin/exams/' . $exam['id'] . '/questions/add') ?>" 
                        class="btn btn-primary btn-sm" 
-                       title="Add Question">
+                       title="Tambah Soal">
                         <i class="bi bi-plus-lg"></i>
                     </a>
                 </div>
@@ -178,7 +175,6 @@
 </div>
 
 <style>
-/* Stats Cards */
 .stat-card {
     transition: all 0.3s ease;
 }
@@ -212,7 +208,6 @@
     background: linear-gradient(135deg, #D97706 0%, var(--warning) 100%);
 }
 
-/* Exam Cards */
 .exam-card {
     transition: all 0.3s ease;
 }
@@ -230,7 +225,6 @@
     border-radius: 0 0 16px 16px !important;
 }
 
-/* Info Items */
 .info-item {
     display: flex;
     align-items: center;

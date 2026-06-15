@@ -1,68 +1,271 @@
-# CodeIgniter 4 Application Starter
+## 📸 Application Preview
 
-## What is CodeIgniter?
+### 👨‍💼 Admin Panel
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+#### Dashboard
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+<img src="screenshots/admin/Tampilan Dashboard.png" width="100%">
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+Dashboard admin menampilkan statistik ujian, aktivitas peserta, dan monitoring sistem secara real-time.
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+#### Kelola Ujian
 
-## Installation & updates
+<img src="screenshots/admin/Kelola Ujian.png" width="100%">
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+Fitur untuk membuat, mengedit, mempublikasikan, dan mengelola ujian beserta soal-soalnya.
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+#### Riwayat Ujian Peserta
 
-## Setup
+<img src="screenshots/admin/riwayat ujian peserta.png" width="100%">
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+Menampilkan riwayat pengerjaan ujian peserta lengkap dengan nilai dan statistik hasil ujian.
 
-## Important Change with index.php
+---
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+### 👨‍🎓 User Panel
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+#### Tampilan Saat Ujian
 
-**Please** read the user guide for a better explanation of how CI4 works!
+<img src="screenshots/user/tampilan saat ujian.png" width="100%">
 
-## Repository Management
+Peserta dapat mengerjakan ujian dengan navigasi soal yang mudah, auto-save jawaban, dan timer yang tersinkronisasi dengan server.
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+#### Tampilan Saat Ujian + Extra Time
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+<img src="screenshots/user/tampilan saat ujian + ekstra time.png" width="100%">
 
-## Server Requirements
+Admin dapat menambahkan waktu ujian secara real-time dan timer peserta akan otomatis diperbarui tanpa perlu me-refresh halaman.
 
-PHP version 8.1 or higher is required, with the following extensions installed:
+#### Review Ujian
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+<img src="screenshots/user/review ujian.png" width="100%">
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - If you are still using PHP 7.4 or 8.0, you should upgrade immediately.
-> - The end of life date for PHP 8.1 will be December 31, 2025.
+Halaman review menampilkan nilai, statistik jawaban, serta detail jawaban peserta dan jawaban yang benar.
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+---
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+# 🎓 Online Exam System
+
+Sistem ujian online berbasis web yang modern, aman, dan responsif. Dibangun menggunakan **CodeIgniter 4**, **Bootstrap 5**, dan **MySQL** dengan dukungan timer server-side, auto-save jawaban, serta monitoring ujian secara real-time.
+
+---
+
+## 🔗 Links
+
+* Repository: https://github.com/Hanywalll/demo_web_ujian
+* Dokumentasi Tangkapan Layar: https://drive.google.com/drive/folders/1jyIg9MB_9ZzqtyJqRJu0oFBZ16oII-da
+* Database SQL: tersedia pada folder `database/demowebujian.sql`
+
+---
+
+## ✨ Features
+
+### 👨‍💼 Admin
+
+* Dashboard real-time
+* Manajemen ujian (Create, Publish, Unpublish)
+* Manajemen soal dengan dukungan MathJax
+* Upload gambar soal
+* Monitoring peserta ujian
+* Penambahan waktu ujian secara real-time
+* Statistik dan histori ujian peserta
+
+### 👨‍🎓 User
+
+* Registrasi & Login
+* Pendaftaran ujian
+* Timer ujian server-side
+* Auto-save jawaban (AJAX)
+* Backup jawaban menggunakan LocalStorage
+* Resume ujian yang belum selesai
+* Review hasil dan detail jawaban
+* Responsive design (Desktop, Tablet, Mobile)
+
+---
+
+## 🔐 Security Features
+
+* CSRF Protection
+* Password Hashing (Bcrypt)
+* SQL Injection Prevention
+* XSS Protection
+* Session-Based Authentication
+* Role-Based Access Control
+* Server-Side Timer Validation
+* Input Validation & Sanitization
+* Secure File Upload
+* Safe Error Handling
+
+---
+
+## 🌐 Network Recovery Mechanism
+
+Aplikasi dirancang tetap aman ketika koneksi internet terputus:
+
+* Jawaban otomatis tersimpan ke database
+* Backup jawaban ke LocalStorage
+* Auto-sync saat koneksi kembali
+* Session tetap aktif
+* Resume ujian setelah login ulang
+* Timer tetap berjalan di server
+
+---
+
+## 👤 Demo Accounts
+
+> Akun berikut otomatis tersedia setelah mengimpor file `database/demowebujian.sql`
+
+| Role  | Email                                         | Password |
+| ----- | --------------------------------------------- | -------- |
+| Admin | [admin@example.com](mailto:admin@example.com) | admin123 |
+| User  | [user1@example.com](mailto:user1@example.com) | user123  |
+| User  | [user2@example.com](mailto:user2@example.com) | user123  |
+
+---
+
+## ⚙️ Requirements
+
+### Server
+
+* PHP 8.0+
+* Composer 2+
+* MySQL 5.7+ / MariaDB 10.3+
+* Apache / Nginx
+
+### PHP Extensions
+
+```text
+intl
+curl
+mbstring
+openssl
+pdo_mysql
+xml
+```
+
+---
+
+## 🚀 Installation
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/Hanywalll/demo_web_ujian.git
+cd demo_web_ujian
+```
+
+### 2. Install Dependencies
+
+```bash
+composer install
+```
+
+### 3. Configure Environment
+
+Salin file `env` menjadi `.env`
+
+```bash
+cp env .env
+```
+
+Edit konfigurasi database pada file `.env`
+
+```env
+database.default.hostname = localhost
+database.default.database = demowebujian
+database.default.username = root
+database.default.password =
+database.default.DBDriver = MySQLi
+database.default.port = 3306
+```
+
+### 4. Create Database
+
+```sql
+CREATE DATABASE demowebujian;
+```
+
+### 5. Import Database
+
+File database tersedia pada:
+
+```text
+database/demowebujian.sql
+```
+
+#### Menggunakan phpMyAdmin
+
+1. Buka `http://localhost/phpmyadmin`
+2. Buat database `demowebujian`
+3. Klik tab **Import**
+4. Pilih file `database/demowebujian.sql`
+5. Klik **Go**
+
+#### Menggunakan MySQL CLI
+
+```bash
+mysql -u root -p demowebujian < database/demowebujian.sql
+```
+
+### 6. Set Folder Permissions (Linux/MacOS)
+
+```bash
+chmod -R 775 writable/
+chmod -R 775 public/uploads/
+```
+
+### 7. Start Server
+
+```bash
+php spark serve
+```
+
+Akses aplikasi melalui:
+
+```text
+http://localhost:8080
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+demo_web_ujian/
+├── app/
+├── public/
+├── writable/
+├── database/
+│   └── demowebujian.sql
+├── screenshots/
+│   ├── admin/
+│   │   ├── Kelola Ujian.png
+│   │   ├── Tampilan Dashboard.png
+│   │   └── riwayat ujian peserta.png
+│   └── user/
+│       ├── review ujian.png
+│       ├── tampilan saat ujian.png
+│       └── tampilan saat ujian + ekstra time.png
+├── .env
+├── composer.json
+└── README.md
+```
+
+---
+
+## 👨‍💻 Developer
+
+**Muhammad Burhanudin**
+
+* GitHub: https://github.com/Hanywalll
+* LinkedIn: https://www.linkedin.com/in/m-burhanudin
+
+---
+
+## 📄 License
+
+Project ini dibuat untuk keperluan pembelajaran dan mini project.
+
+---
+
+⭐ Jika project ini bermanfaat, jangan lupa memberikan **Star** pada repository.

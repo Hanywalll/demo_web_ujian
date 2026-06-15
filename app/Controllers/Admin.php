@@ -21,6 +21,7 @@ class Admin extends BaseController
         $this->questionModel = new QuestionModel();
         $this->examSessionModel = new ExamSessionModel();
         $this->userModel = new UserModel();
+        $this->answerModel = new \App\Models\UserAnswerModel();
     }
     
     public function index()
@@ -129,6 +130,7 @@ class Admin extends BaseController
             elseif ($session['status'] === 'expired') $statusClass = 'danger';
             
             $formattedSessions[] = [
+                'id' => $user['id'],
                 'user_name' => $session['user_name'],
                 'user_email' => $session['user_email'],
                 'exam_title' => $session['exam_title'],
@@ -418,5 +420,162 @@ class Admin extends BaseController
         ];
         
         return view('admin/extra_time', $data);
+    }
+
+public function getUserExamHistory($userId)
+    {
+        try {
+            if (!$this->request->isAJAX()) {
+                return $this->response->setStatusCode(403);
+            }
+            
+            log_message('debug', 'getUserExamHistory called with userId: ' . $userId);
+            
+            if (!$userId || !is_numeric($userId)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'ID pengguna tidak valid: ' . $userId
+                ]);
+            }
+            
+            $user = $this->userModel->find($userId);
+            if (!$user) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Pengguna tidak ditemukan dengan ID: ' . $userId
+                ]);
+            }
+            
+            log_message('debug', 'User found: ' . $user['name']);
+            
+            // Coba query sessions
+            try {
+                $sessions = $this->examSessionModel
+                    ->select('exam_sessions.*, exams.title as exam_title, exams.duration_minutes')
+                    ->join('exams', 'exams.id = exam_sessions.exam_id', 'left')
+                    ->where('exam_sessions.user_id', $userId)
+                    ->where('exam_sessions.status', 'finished')
+                    ->orderBy('exam_sessions.start_time', 'DESC')
+                    ->findAll();
+                
+                log_message('debug', 'Found ' . count($sessions) . ' sessions');
+            } catch (\Exception $e) {
+                log_message('error', 'Query sessions error: ' . $e->getMessage());
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error query sessions: ' . $e->getMessage()
+                ]);
+            }
+            
+            $examHistory = [];
+            $totalScore = 0;
+            $scoreCount = 0;
+            $highestScore = 0;
+            $lowestScore = 100;
+            $bestExam = null;
+            
+            foreach ($sessions as $index => $session) {
+                try {
+                    log_message('debug', 'Processing session ' . ($index + 1) . ': ' . $session['id']);
+                    
+                    $questions = $this->questionModel
+                        ->where('exam_id', $session['exam_id'])
+                        ->findAll();
+                    
+                    log_message('debug', 'Found ' . count($questions) . ' questions');
+                    
+                    $answers = $this->answerModel
+                        ->where('session_id', $session['id'])
+                        ->findAll();
+                    
+                    log_message('debug', 'Found ' . count($answers) . ' answers');
+                    
+                    $answersMap = [];
+                    foreach ($answers as $answer) {
+                        $answersMap[$answer['question_id']] = $answer['selected_answer'] ?? null;
+                    }
+                    
+                    $totalQuestions = count($questions);
+                    $correctCount = 0;
+                    
+                    if ($totalQuestions > 0) {
+                        foreach ($questions as $question) {
+                            $userAnswer = $answersMap[$question['id']] ?? null;
+                            if ($userAnswer !== null && $userAnswer === $question['correct_answer']) {
+                                $correctCount++;
+                            }
+                        }
+                        $score = round(($correctCount / $totalQuestions) * 100, 2);
+                    } else {
+                        $score = 0;
+                    }
+                    
+                    $grade = 'E';
+                    if ($score >= 90) $grade = 'A';
+                    elseif ($score >= 80) $grade = 'B';
+                    elseif ($score >= 70) $grade = 'C';
+                    elseif ($score >= 60) $grade = 'D';
+                    
+                    $totalScore += $score;
+                    $scoreCount++;
+                    if ($score > $highestScore) {
+                        $highestScore = $score;
+                        $bestExam = $session['exam_title'] ?? 'Unknown';
+                    }
+                    if ($score < $lowestScore && $score > 0) {
+                        $lowestScore = $score;
+                    }
+                    
+                    $examHistory[] = [
+                        'exam_title' => $session['exam_title'] ?? 'Unknown',
+                        'exam_date' => date('d M Y', strtotime($session['start_time'])),
+                        'exam_time' => date('H:i', strtotime($session['start_time'])),
+                        'duration' => ($session['duration_minutes'] ?? 0) . ' menit',
+                        'time_taken' => $session['total_time_taken'] ? round($session['total_time_taken'], 1) . ' menit' : '-',
+                        'total_questions' => $totalQuestions,
+                        'correct_count' => $correctCount,
+                        'score' => $score,
+                        'grade' => $grade,
+                    ];
+                    
+                } catch (\Exception $e) {
+                    log_message('error', 'Error processing session ' . $session['id'] . ': ' . $e->getMessage());
+                    continue;
+                }
+            }
+            
+            $averageScore = $scoreCount > 0 ? round($totalScore / $scoreCount, 2) : 0;
+            if ($lowestScore === 100 && $scoreCount === 0) {
+                $lowestScore = 0;
+            }
+            
+            log_message('debug', 'Returning success with ' . count($examHistory) . ' exam history');
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'user' => [
+                    'name' => $user['name'],
+                    'email' => $user['email'],
+                ],
+                'history' => $examHistory,
+                'statistics' => [
+                    'total_exams' => $scoreCount,
+                    'average_score' => $averageScore,
+                    'highest_score' => $highestScore,
+                    'lowest_score' => $lowestScore,
+                    'best_exam' => $bestExam ?? '-',
+                ],
+                'csrf_token' => csrf_hash()
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'getUserExamHistory fatal error: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
     }
 }

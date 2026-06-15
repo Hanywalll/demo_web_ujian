@@ -159,12 +159,13 @@
                         <th class="py-3 small text-uppercase text-muted fw-bold">Nama dan Email</th>
                         <th class="py-3 small text-uppercase text-muted fw-bold text-center">Ujian Diikuti</th>
                         <th class="py-3 small text-uppercase text-muted fw-bold text-center">Total Sesi</th>
-                        <th class="pe-4 py-3 small text-uppercase text-muted fw-bold">Aktivitas Terakhir</th>
+                        <th class="py-3 small text-uppercase text-muted fw-bold">Aktivitas Terakhir</th>
+                        <th class="pe-4 py-3 small text-uppercase text-muted fw-bold text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
                     <?php if (empty($users)): ?>
-                        <tr><td colspan="5" class="text-center py-4 text-muted">Belum ada peserta terdaftar</td></tr>
+                        <tr><td colspan="6" class="text-center py-4 text-muted">Belum ada peserta terdaftar</td></tr>
                     <?php else: ?>
                         <?php foreach ($users as $i => $user): ?>
                         <tr>
@@ -181,6 +182,14 @@
                             <td class="text-center"><span class="badge badge-gradient-primary text-white rounded-pill px-3"><?= $user['total_exams_taken'] ?? 0 ?></span></td>
                             <td class="text-center"><span class="badge badge-gradient-info text-white rounded-pill px-3"><?= $user['total_sessions'] ?? 0 ?></span></td>
                             <td class="text-muted small"><?= $user['last_activity'] ? date('d M Y, H:i', strtotime($user['last_activity'])) : '<span class="text-muted fst-italic">Belum ada</span>' ?></td>
+                            <td class="text-center pe-4">
+                                <button class="btn btn-sm btn-info text-white btn-detail-user" 
+                                        data-user-id="<?= $user['id'] ?>" 
+                                        data-user-name="<?= esc($user['name']) ?>"
+                                        title="Lihat Riwayat Ujian">
+                                    <i class="bi bi-eye me-1"></i>Detail
+                                </button>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -283,15 +292,114 @@
     .stat-icon-primary { background: linear-gradient(135deg, #3264B9 0%, #1E95E0 100%); }
     .stat-icon-success { background: linear-gradient(135deg, #059669 0%, #10B981 100%); }
     .stat-icon-info { background: linear-gradient(135deg, #0891B2 0%, #06B6D4 100%); }
+
+    .stat-mini-card {
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    .stat-mini-card:hover {
+        transform: translateY(-3px);
+    }
+    .stat-mini-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    #userDetailModal .modal-header {
+        border-radius: 0 !important;
+        padding: 1.5rem !important;
+    }
+
+    #userDetailModal .modal-content {
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+
+    #userDetailModal .modal-body {
+        padding: 2rem !important;
+    }
+
+    #userDetailModal .modal-dialog {
+        max-width: 1200px !important;
+        margin: 1rem auto !important;
+    }
+
+    @media (max-width: 768px) {
+        #userDetailModal .modal-dialog {
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+        
+        #userDetailModal .modal-content {
+            border-radius: 0 !important;
+            height: 100vh;
+            height: -webkit-fill-available;
+        }
+        
+        #userDetailModal .modal-header {
+            padding: 1rem !important;
+        }
+        
+        #userDetailModal .modal-body {
+            padding: 1rem !important;
+        }
+    }
+    .stat-mini-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-top: 0.3rem;
+    }
+    .grade-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: white;
+    }
+    .grade-A { background: linear-gradient(135deg, #059669 0%, #10B981 100%); }
+    .grade-B { background: linear-gradient(135deg, #0891B2 0%, #06B6D4 100%); }
+    .grade-C { background: linear-gradient(135deg, #3264B9 0%, #1E95E0 100%); }
+    .grade-D { background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%); }
+    .grade-E { background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%); }
 </style>
+
+<div class="modal fade" id="userDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header header-gradient-info border-0">
+                <div class="d-flex align-items-center w-100">
+                    <i class="bi bi-person-lines-fill fs-3 me-3 text-white"></i>
+                    <div>
+                        <h5 class="modal-title text-white fw-bold mb-1">
+                            Riwayat Ujian Peserta
+                        </h5>
+                        <small class="text-white opacity-75" id="modalUserName">Nama Peserta</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body p-0" id="modalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-3 text-muted">Memuat data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 var startDate = '<?= $startDate ?>';
 var endDate = '<?= $endDate ?>';
 var csrfName = '<?= csrf_token() ?>';
 var csrfHash = '<?= csrf_hash() ?>';
-var isBaselineInitialized = false;
-var previousSessionsData = null;
 
 function updateDashboard() {
     var formData = new FormData();
@@ -321,7 +429,7 @@ function updateDashboard() {
             
             var usersHtml = '';
             if (data.users.length === 0) {
-                usersHtml = '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada peserta terdaftar</td></tr>';
+                usersHtml = '<tr><td colspan="6" class="text-center py-4 text-muted">Belum ada peserta terdaftar</td></tr>';
             } else {
                 data.users.forEach(function(user, i) {
                     var initial = user.name.charAt(0).toUpperCase();
@@ -333,11 +441,14 @@ function updateDashboard() {
                         '<td class="text-center"><span class="badge badge-gradient-primary text-white rounded-pill px-3">' + user.total_exams_taken + '</span></td>' +
                         '<td class="text-center"><span class="badge badge-gradient-info text-white rounded-pill px-3">' + user.total_sessions + '</span></td>' +
                         '<td class="text-muted small">' + lastAct + '</td>' +
+                        '<td class="text-center pe-4"><button class="btn btn-sm btn-info text-white btn-detail-user" data-user-id="' + user.id + '" data-user-name="' + user.name + '" title="Lihat Riwayat Ujian"><i class="bi bi-eye me-1"></i>Detail</button></td>' +
                         '</tr>';
                 });
             }
             document.getElementById('usersTableBody').innerHTML = usersHtml;
             document.getElementById('userCountBadge').textContent = data.users.length;
+            
+            attachDetailButtons();
             
             var sessionsHtml = '';
             if (data.examSessions.length === 0) {
@@ -367,7 +478,168 @@ function updateDashboard() {
     .catch(error => console.error('Polling error:', error));
 }
 
+function attachDetailButtons() {
+    document.querySelectorAll('.btn-detail-user').forEach(function(btn) {
+        btn.onclick = null;
+        
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var userId = this.getAttribute('data-user-id');
+            var userName = this.getAttribute('data-user-name');
+            
+            if (!userId || userId === 'undefined') {
+                console.error('userId tidak valid:', userId);
+                alert('Error: ID pengguna tidak valid');
+                return;
+            }
+            
+            console.log('Memuat detail untuk user:', userId, userName);
+            showUserDetail(userId, userName);
+        });
+    });
+}
+
+function showUserDetail(userId, userName) {
+    if (!userId || userId === 'undefined') {
+        console.error('userId tidak valid:', userId);
+        return;
+    }
+    
+    document.getElementById('modalUserName').textContent = userName || 'Peserta';
+    document.getElementById('modalBody').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Memuat data...</p></div>';
+    
+    var modal = new bootstrap.Modal(document.getElementById('userDetailModal'));
+    modal.show();
+    
+    var formData = new FormData();
+    formData.append(csrfName, csrfHash);
+    
+    var url = '<?= base_url('admin/get-user-exam-history') ?>/' + userId;
+    console.log('Fetching:', url);
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response:', data);
+        if (data.success) {
+            if (data.csrf_token) {
+                csrfHash = data.csrf_token;
+                document.querySelector('meta[name="csrf-token"]').content = data.csrf_token;
+            }
+            renderUserDetail(data);
+        } else {
+            document.getElementById('modalBody').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>' + (data.message || 'Gagal memuat data') + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('modalBody').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Terjadi kesalahan: ' + error.message + '</div>';
+    });
+}
+
+function renderUserDetail(data) {
+    var stats = data.statistics;
+    var history = data.history;
+    
+    var avgGrade = 'E';
+    if (stats.average_score >= 90) avgGrade = 'A';
+    else if (stats.average_score >= 80) avgGrade = 'B';
+    else if (stats.average_score >= 70) avgGrade = 'C';
+    else if (stats.average_score >= 60) avgGrade = 'D';
+    
+    var html = '<div class="p-4">';
+    
+    if (history.length === 0) {
+        html += '<div class="text-center py-5">' +
+            '<i class="bi bi-inbox" style="font-size: 4rem; color: var(--primary-light);"></i>' +
+            '<h5 class="mt-3 text-muted">Peserta ini belum menyelesaikan ujian apapun</h5>' +
+            '</div>';
+    } else {
+        html += '<div class="row g-3 mb-4">';
+        
+        html += '<div class="col-6 col-md-3">' +
+            '<div class="stat-mini-card stat-box-primary text-white">' +
+            '<div class="stat-mini-value">' + stats.total_exams + '</div>' +
+            '<div class="stat-mini-label">Total Ujian</div>' +
+            '</div></div>';
+        
+        html += '<div class="col-6 col-md-3">' +
+            '<div class="stat-mini-card stat-box-success text-white">' +
+            '<div class="stat-mini-value">' + stats.average_score + '</div>' +
+            '<div class="stat-mini-label">Rata-rata Nilai</div>' +
+            '</div></div>';
+        
+        html += '<div class="col-6 col-md-3">' +
+            '<div class="stat-mini-card stat-box-warning text-white">' +
+            '<div class="stat-mini-value">' + stats.highest_score + '</div>' +
+            '<div class="stat-mini-label">Nilai Tertinggi</div>' +
+            '</div></div>';
+        
+        html += '<div class="col-6 col-md-3">' +
+            '<div class="stat-mini-card" style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%); color: white;">' +
+            '<div class="stat-mini-value">' + stats.lowest_score + '</div>' +
+            '<div class="stat-mini-label">Nilai Terendah</div>' +
+            '</div></div>';
+        
+        html += '</div>';
+        
+        if (stats.best_exam && stats.best_exam !== '-') {
+            html += '<div class="alert alert-info d-flex align-items-center mb-4">' +
+                '<i class="bi bi-trophy-fill fs-3 me-3 text-warning"></i>' +
+                '<div><strong>Ujian Terbaik:</strong> ' + stats.best_exam + ' dengan nilai <strong>' + stats.highest_score + '</strong></div>' +
+                '</div>';
+        }
+        
+        html += '<h6 class="fw-bold text-dark mb-3"><i class="bi bi-list-check me-2 text-primary"></i>Daftar Ujian yang Pernah Diikuti</h6>';
+        
+        html += '<div class="table-responsive"><table class="table table-hover align-middle mb-0 modern-table">' +
+            '<thead class="bg-light"><tr>' +
+            '<th class="ps-3 py-2 small text-uppercase text-muted fw-bold">No</th>' +
+            '<th class="py-2 small text-uppercase text-muted fw-bold">Nama Ujian</th>' +
+            '<th class="py-2 small text-uppercase text-muted fw-bold">Tanggal</th>' +
+            '<th class="py-2 small text-uppercase text-muted fw-bold text-center">Waktu</th>' +
+            '<th class="py-2 small text-uppercase text-muted fw-bold text-center">Benar</th>' +
+            '<th class="py-2 small text-uppercase text-muted fw-bold text-center">Nilai</th>' +
+            '<th class="pe-3 py-2 small text-uppercase text-muted fw-bold text-center">Grade</th>' +
+            '</tr></thead><tbody>';
+        
+        history.forEach(function(exam, i) {
+            var scoreColor = exam.score >= 70 ? 'text-success' : (exam.score >= 60 ? 'text-warning' : 'text-danger');
+            
+            html += '<tr>' +
+                '<td class="ps-3 fw-bold text-muted">' + (i + 1) + '</td>' +
+                '<td><div class="fw-bold text-dark">' + exam.exam_title + '</div>' +
+                '<small class="text-muted">Durasi: ' + exam.duration + ' | Pengerjaan: ' + exam.time_taken + '</small></td>' +
+                '<td><div class="small text-dark">' + exam.exam_date + '</div>' +
+                '<small class="text-muted">' + exam.exam_time + '</small></td>' +
+                '<td class="text-center"><span class="badge badge-gradient-info text-white rounded-pill px-3">' + exam.time_taken + '</span></td>' +
+                '<td class="text-center"><span class="fw-bold">' + exam.correct_count + '/' + exam.total_questions + '</span></td>' +
+                '<td class="text-center"><span class="fw-bold fs-5 ' + scoreColor + '">' + exam.score + '</span></td>' +
+                '<td class="text-center pe-3"><span class="grade-badge grade-' + exam.grade + '">' + exam.grade + '</span></td>' +
+                '</tr>';
+        });
+        
+        html += '</tbody></table></div>';
+    }
+    
+    html += '</div>';
+    
+    document.getElementById('modalBody').innerHTML = html;
+}
+
 setInterval(updateDashboard, 2000);
-document.addEventListener('DOMContentLoaded', updateDashboard);
+document.addEventListener('DOMContentLoaded', function() {
+    updateDashboard();
+    attachDetailButtons();
+});
 </script>
 <?= $this->endSection() ?>

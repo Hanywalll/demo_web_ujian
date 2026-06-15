@@ -37,6 +37,7 @@ $routes->group('admin', ['filter' => 'auth:admin'], function($routes) {
     // ✅ AJAX ENDPOINTS (untuk real-time polling)
     $routes->post('get-dashboard-data', 'Admin::getDashboardData');
     $routes->post('get-extra-time-data', 'Admin::getExtraTimeData');
+    $routes->post('get-user-exam-history/(:num)', 'Admin::getUserExamHistory/$1');
 });
 
 // Exam routes (untuk user)
